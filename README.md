@@ -1,20 +1,21 @@
 
 # EM-NAV: Investigating the Role of Sparsity, Spiking Dynamics, and Recurrence in the Geometry and Transferability of Spatial Representations
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
 
-## 1. Project Overview
-EM-NAV (Emergent Mapping in Navigation) is a computational neuroscience research study designed to investigate how different neural architectures construct internal, abstract representations of space when exposed only to highly constrained egocentric sensory information.
+---
 
-This project is not an engineering exercise focused on maximizing reinforcement learning rewards, accelerating navigation speeds, or benchmark-testing neuromorphic hardware latency. Instead, EM-NAV utilizes deep reinforcement learning purely as a controlled experimental tool to generate neural activity, treating behavioral maze navigation much like a standard behavioral task used to record data in biological systems neuroscience.
+## 1. Project Overview & Core Question
+**EM-NAV (Emergent Mapping in Navigation)** is a rigorous computational neuroscience research study designed to investigate how different neural architectures construct internal, abstract representations of space when exposed only to highly constrained egocentric sensory information.
 
-The central aim of this research is to evaluate:
-* **How spatial representations emerge** within hidden artificial networks.
-* **What explicit geometric structure** those emergent manifolds take.
-* **Whether biological network constraints** (population sparsity and temporal spiking thresholds) influence representational topology.
-* **Whether these internal realities remain stable** across distinct environmental and embodiment shifts.
+This project is explicitly **not** an engineering exercise focused on maximizing reinforcement learning rewards, accelerating navigation speeds, benchmarking hardware latency, or building 3D simulation tools. Instead, EM-NAV utilizes deep reinforcement learning purely as a controlled experimental mechanism to generate neural activity, treating behavioral maze navigation much like a standard behavioral task used to record electrophysiological data in biological systems neuroscience.
+
+### The Core Question
+> **Does enforcing biological constraints—specifically population sparsity, event-driven temporal threshold dynamics, and network recurrence—force a navigation agent to construct an abstract cognitive map of its environment, and do these constraints yield representations that remain stable when the physical properties of the world change?**
+
+This is a fundamental inquiry into the nature of representation learning under constraints. We seek to understand whether the constraints biological brains operate under are sufficient to *cause* the emergence of the spatial coordinate structures observed in the hippocampal-entorhinal formation, or whether those structures require an entirely separate evolutionary mechanism.
 
 ---
 
@@ -23,15 +24,20 @@ Animals demonstrate a remarkable ability to navigate complex, changing environme
 
 A defining feature of this biological apparatus is its metabolic scarcity: the brain operates under an ultra-sparse coding regime where only roughly 2% to 5% of neurons are active at any given millisecond. 
 
-EM-NAV sits at the intersection of **Computational Neuroscience**, **Neuromorphic AI**, and **Representation Learning** to address a fundamental question: *Are biological constraints merely energetic shortcuts, or do they serve as an essential inductive bias that forces the brain to organize local sensory inputs into abstract, transferable maps?* ```
-  [Perceptual Aliasing] 
-           ↓ (Requires Internal Coordinate Tracking)
-  [Representation Formation] 
-           ↓ (Constrained by Sparsity / Spiking / Recurrence)
-  [Latent Manifold Geometry] 
-           ↓ (Evaluated via Decodability & Tri-RSA)
-  [Transfer Stability]
+EM-NAV sits at the intersection of **Computational Neuroscience**, **Neuromorphic AI**, and **Representation Learning** to address a fundamental question: *Are biological constraints merely energetic shortcuts, or do they serve as an essential inductive bias that forces the brain to organize local sensory inputs into abstract, transferable maps?* 
 
+```text
+  [Perceptual Aliasing] 
+           │
+           ▼ (Requires Internal Coordinate Tracking)
+  [Representation Formation] 
+           │
+           ▼ (Constrained by Sparsity / Spiking / Recurrence)
+  [Latent Manifold Geometry] 
+           │
+           ▼ (Evaluated via Decodability & Tri-RSA)
+  [Transfer Stability]
+```
 
 
 ---
@@ -53,7 +59,27 @@ EM-NAV sits at the intersection of **Computational Neuroscience**, **Neuromorphi
 
 ---
 
-## 5. Experimental Architecture & Design
+## 5. System Architecture
+
+The project features a tightly integrated two-environment platform strategy explicitly structured to separate the phases of standard scientific training from zero-shot sensorimotor transfer evaluation:
+
+```text
+  MiniGrid (Training Sandbox)               Python / snnTorch / PyTorch
+  ───────────────────────────               ───────────────────────────
+  Standard Gym maze env       <───────────> LIF / RNN Hidden Matrix (H=32)
+  Fast CPU step processing    States/Rays   
+  Reproducible, Citable       Actions       PPO Reinforcement Learning Loop
+                              
+                                                   │
+                                                   ▼ (Synaptic Weights Frozen)
+                                            
+  Blender 5.x (Continuous Evaluation)       Zero-Shot Platform Deployment
+  ───────────────────────────────────       ─────────────────────────────
+  3D Continuous Maze Environment             Frozen Policy Execution
+  5-Sensor Raycast Array on Asset           Cross-Engine Manifold Extraction
+  Continuous Physics stepping               Representational Drift Analysis (RDI)
+
+```
 
 ### Sensory System & Perceptual Aliasing
 
@@ -64,18 +90,22 @@ $$\mathbf{x}_t = [d_{\text{left}}, d_{\text{diag\_left}}, d_{\text{front}}, d_{\
 
 Rays map continuous normalized distances $\in [0.0, 1.0]$ up to a max range of 8 units. Because global maps, absolute coordinates, and target-pointing vectors are completely removed, the environment exhibits severe **perceptual aliasing** (physically distant corridors yielding identical local sensor readings). This ensures the agent cannot solve the task reflexively and forces the network to build a persistent internal map to resolve location ambiguity.
 
-### The 4-Agent Ablation Matrix
-
-To isolate variables, the hidden population layer width across all models is strictly matched at $H = 32$:
-
-1. **Agent A (Dense MLP):** Purely feedforward, continuous ReLU activations. No recurrence, no temporal tracking, no spiking. (Baseline Control).
-2. **Agent B (Feedforward SNN):** Feedforward Leaky Integrate-and-Fire (LIF) neurons (`snnTorch`). Frames are statically clamped across a temporal window of $T=20$ virtual steps to allow membrane integration without memory loops.
-3. **Agent C (Recurrent RNN):** Continuous artificial hidden layer with recurrent feedback ($H \leftrightarrow H$). Continuous state memory without threshold spiking.
-4. **Agent D (Recurrent SNN / RSNN):** Recurrent LIF hidden layers combining temporal recurrent memory with a target $2\%\text{--}5\%$ population firing sparsity (enforced via an $L_1$ activity regularization penalty).
-
 ---
 
-## 6. Multi-Task Optimization Protocols
+## 6. Detailed Experimental Design
+
+To isolate variables with causal absolute rigor, the hidden population layer width across all experimental networks is strictly matched at $H = 32$.
+
+### The 4-Agent Benchmarking Matrix
+
+| Agent Network | Neuron Type / Activation | Firing Pattern | Memory Mechanics | Core Analytical Purpose |
+| --- | --- | --- | --- | --- |
+| **Agent A: Dense Baseline** | Standard MLP / ReLU | Dense, Continuous | None (Feedforward) | Baseline Control for unconstrained, non-spiking mapping |
+| **Agent B: FF-SNN** | LIF Neurons (`snnTorch`) | Sparse, Event-driven ($T=20$) | None (Feedforward) | Isolates temporal thresholding dynamics *without* memory |
+| **Agent C: RNN Memory** | Continuous RNN Cell | Dense, Continuous | Hidden Recurrence ($H \leftrightarrow H$) | Isolates continuous recurrence loops *without* spiking thresholds |
+| **Agent D: Recurrent SNN** | Recurrent LIF Neurons | Ultra-Sparse ($2\%\text{--}5\%$ via $L_1$) | Hidden Recurrence ($H \leftrightarrow H$) | Explores full biological synergy of spiking, memory, and sparsity |
+
+### Multi-Task Optimization Protocols
 
 Agents are optimized using Proximal Policy Optimization (PPO) across a pilot baseline of 3 independent random seeds ($4\text{ architectures} \times 2\text{ tasks} \times 3\text{ seeds} = 24\text{ total runs}$) across two separate reward structures to insulate representation analysis from reward contamination:
 
@@ -88,11 +118,25 @@ $$R_t = \frac{1}{\sqrt{N(x,y)}}$$
 
 ---
 
-## 7. The Representation Analysis Framework
+## 7. The Project Tech Stack
+
+| Tool / Framework | Direct Scientific & Engineering Role in EM-NAV |
+| --- | --- |
+| **MiniGrid** | Primary training environment; provides fast, discrete, and reproducible maze configuration matrix boxes. |
+| **Blender 5.x** | Continuous Sensorimotor Evaluation Platform; provides continuous physics, physical ray-casting, and morphology-shift testing. |
+| **snnTorch** | Instantiates Leaky Integrate-and-Fire (LIF) models, manages membrane potentials, and applies surrogate gradient backpropagation. |
+| **PyTorch** | Core deep learning backbone; manages standard linear weight arrays, optimization loops, and custom RNN cells. |
+| **Gymnasium** | Enforces standardized RL environment wrappers, state step logic, and action processing boundaries. |
+| **NumPy / SciPy** | Drives the analytical math backend; handles matrix discretization, spatial metrics, and statistical correlation tracking. |
+| **Matplotlib** | Generates primary publication graphics, single-cell rate heatmaps, and spatial information density curves. |
+
+---
+
+## 8. The Representation Analysis Framework
 
 Following training convergence ($1 \times 10^6$ steps), all network synaptic weights are permanently frozen. Hidden population states are extracted over an evaluation trajectory to run a progressive three-tiered diagnostic pipeline:
 
-```
+```text
                   ┌──────────────────────────────────────────┐
                   │      Frozen Hidden Population States     │
                   └────────────────────┬─────────────────────┘
@@ -128,7 +172,7 @@ Generates standard 2D spatial firing rate heatmaps for individual hidden units, 
 
 ---
 
-## 8. Continuous Sensorimotor Evaluation (The Transfer Crucible)
+## 9. Continuous Sensorimotor Evaluation (The Transfer Crucible)
 
 EM-NAV incorporates a strict **Decision Gate**: if representation metrics reveal no distinct spatial coordinate tracking or structural variance within the training framework, work halts to run a formal failure analysis, preventing wasted engineering effort.
 
@@ -153,4 +197,13 @@ By re-computing the network RDMs inside the continuous space, the project maps t
 ├── blender/                # Continuous Sensorimotor Evaluation runtime hooks
 └── requirements.txt        # Verified dependency ecosystem
 
+```
+
+---
+
+## 📜 License & Citation
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+
+If you use this framework or the Tri-RSA methodology in your research, please cite this work.
 
