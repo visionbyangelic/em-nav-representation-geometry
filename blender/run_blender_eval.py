@@ -28,11 +28,7 @@ import glob
 import math
 import numpy as np
 
-# Ensure system Python packages (PyTorch) can be found if running inside Blender
-sys_path_packages = r"C:\ProgramData\anaconda3\Lib\site-packages"
-if os.path.exists(sys_path_packages) and sys_path_packages not in sys.path:
-    sys.path.insert(0, sys_path_packages)
-
+# Guarantee parent workspace directory is on sys.path
 repo_root = r"c:\Users\nerdyalgorithm\Desktop\top project\em-nav-representation-geometry"
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
