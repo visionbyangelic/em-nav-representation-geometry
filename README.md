@@ -185,19 +185,26 @@ By re-computing the network RDMs inside the continuous space, the project maps t
 ## 📂 Repository Structure
 
 ```text
+├── Docs/                     # Project tracking log, visual figures, and documentation
+├── blender/                  # Continuous Sensorimotor Evaluation runtime hooks
+├── checkpoints/              # All 24 saved model weight files (.pt)
 ├── wrappers/                 # Custom Gym wrappers for egocentric ray-marching
-├── models.py                 # PyTorch & snnTorch network definitions (A, B, C, D)
-├── train.py                  # Multi-task PPO RL training engine with detached critic
-├── kaggle_train_all.py       # Standalone Kaggle GPU training launcher for 100% reproducibility
+├── .gitignore                # Bytecode cache and temporary file exclusions
+├── LICENSE                   # MIT open-source license specification
+├── OVERVIEW.md               # Executive project summary & step-by-step journey
+├── README.md                 # Primary research repository documentation
+├── check.ipynb               # Phase 0 & Phase 1 environment verification notebook
 ├── evaluate_representations.py # Phase 2 & 3 Linear Probing (R²) and Tri-RSA (Kendall's τ) engine
 ├── evaluate_single_units.py  # Phase 4 Skaggs Spatial Information Index (I) engine
+├── kaggle_train_all.py       # Standalone Kaggle GPU training launcher for 100% reproducibility
+├── models.py                 # PyTorch & snnTorch network definitions (A, B, C, D)
+├── requirements.txt          # Verified dependency ecosystem
 ├── stage_zero_scan.py        # Phase 0 baseline perceptual aliasing scan engine
 ├── test_init.py              # System initialization & hardware capability verification script
 ├── track.md                  # Detailed progress tracker, compute audit & empirical results
-├── OVERVIEW.md               # Executive project summary & step-by-step journey
-├── blender/                  # Continuous Sensorimotor Evaluation runtime hooks
-└── requirements.txt          # Verified dependency ecosystem
+└── train.py                  # Multi-task PPO RL training engine with detached critic
 ```
+
 
 ---
 
