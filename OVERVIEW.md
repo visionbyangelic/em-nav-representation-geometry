@@ -54,11 +54,20 @@ We wanted to answer a fundamental question:
 
 ---
 
+## 4. 3D BLENDER CONTINUOUS EVALUATION PLAN (EASY VS. HARD MAZE)
+
+To evaluate zero-shot continuous transfer in 3D Blender physics, we deploy frozen trained model weights across two distinct 3D environments:
+
+1. **Easy 3D Maze (`easy_maze.blend`)**: A clean, simplified 4-room 3D layout to test basic continuous physics and 3D raycast sensor transfer.
+2. **Hard 3D Maze (`hard_maze.blend`)**: A full, complex 3D Backrooms labyrinth mesh to test topological generalization under extreme perceptual aliasing.
+
+---
+
 ## 🛠️ Repository File Guide
 
 | File Name | Purpose in Plain English |
 | :--- | :--- |
-| **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, and major discoveries (this file). |
+| **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and 3D Blender plan (this file). |
 | **`track.md`** | Comprehensive scientific progress log, GPU compute audit, and full 24-model empirical evaluation tables. |
 | **`models.py`** | PyTorch & snnTorch neural network definitions for Agents A, B, C, and D ($H=32$). |
 | **`train.py`** | Main PPO reinforcement learning training engine with detached value head safeguards. |

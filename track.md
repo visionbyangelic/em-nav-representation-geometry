@@ -68,7 +68,7 @@
 
 ---
 
-### **Phase 6: Zero-Shot Continuous Transfer Engine (COMPLETED ✅)**
+### **Phase 6: Zero-Shot Continuous Transfer Engine (COMPLETED & EXTENDED ✅)**
 - [x] **Build Continuous Transfer Engine (`blender/continuous_eval.py`):**
   - [x] Deploy frozen control weights zero-shot into continuous 3D coordinate space with continuous raycasting.
   - [x] Compute Representational Drift Index (RDI = $1 - r(\text{RDM}_{\text{disc}}, \text{RDM}_{\text{cont}})$).
@@ -77,6 +77,9 @@
   - **Agent B (FF-SNN)**: RDI = $1.0521 \pm 0.0143$
   - **Agent C (RNN)**: RDI = $1.0347 \pm 0.0142$
   - **Agent D (RSNN + Sparsity)**: **Peak Manifold Stability (RDI = $0.9622$ on Task 2 Seed 101)**.
+- [x] **Dual 3D Blender Testing Protocol:**
+  - [x] **Easy 3D Maze (`easy_maze.blend`)**: Clean, simplified 4-room layout for basic 3D physics continuous transfer verification.
+  - [x] **Hard 3D Maze (`hard_maze.blend`)**: Full, complex 3D Backrooms labyrinth mesh for topological generalization testing under severe perceptual aliasing.
 
 ---
 
