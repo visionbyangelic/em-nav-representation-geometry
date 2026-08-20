@@ -6,19 +6,14 @@ PROJECT: EM-NAV (Emergent Mapping in Navigation)
 AUTHOR: Angelic Charles
 
 RESEARCH & SCIENTIFIC PURPOSE:
-  This script executes INSIDE Blender (via Blender's built-in Scripting Tab).
-  It connects the 3D scene objects (the pink 'Cube' agent at (1.3, 1.17, 0.1) and 'Maze' mesh)
+  This script executes INSIDE Blender (via Blender's built-in Scripting Tab or CLI).
+  It connects the 3D scene objects (the pink 'Cube' agent at (1.5, 1.2, 0.1) and 'Maze' mesh)
   with your 24 trained PyTorch checkpoints (Agents A, B, C, D across tasks & seeds).
 
 MODES:
-  - VISUAL_MODE (True): Drives the pink Cube live in the 3D viewport step-by-step for video demos.
+  - VISUAL_MODE (True): Drives the pink Cube live in the 3D viewport step-by-step.
   - BATCH_MODE (True): Sweeps all 24 checkpoints, evaluates continuous 3D navigation, and prints
-    the complete RDI summary table directly in Blender's System Console.
-
-HOW TO RUN IN BLENDER 5.1.0:
-  1. Open 'em-nav Maze.blend' in Blender.
-  2. Click the 'Scripting' tab at the top of Blender.
-  3. Click 'Open', navigate to this file ('blender/run_blender_eval.py'), and click 'Run Script' (Play ▶ button).
+    the complete summary table directly in Blender's System Console.
 ========================================================================================================
 """
 
@@ -27,6 +22,9 @@ import os
 import glob
 import math
 import numpy as np
+
+# Ensure Anaconda paths are removed to prevent Python 3.13 typing_extensions conflicts
+sys.path = [p for p in sys.path if "anaconda3" not in p.lower()]
 
 # Guarantee parent workspace directory is on sys.path
 repo_root = r"c:\Users\nerdyalgorithm\Desktop\top project\em-nav-representation-geometry"
@@ -45,7 +43,16 @@ except ImportError:
     print("Warning: Script is running outside of Blender environment.")
 
 from models import AgentA_MLP, AgentB_FFSNN, AgentC_RNN, AgentD_RSNN
-from train import actor_forward
+
+
+def actor_forward_standalone(model, agent_type, obs, h_state=None):
+    """Standalone actor forward pass (no minigrid dependency)."""
+    if agent_type in ["A", "B", "D"]:
+        h_rep, logits = model(obs)
+        h_next = None
+    elif agent_type == "C":
+        h_rep, logits, h_next = model(obs, h_state)
+    return h_rep, logits, h_next
 
 
 # ========================================================================================================
@@ -58,6 +65,11 @@ BATCH_MODE = True            # Set to True to evaluate all 24 checkpoints automa
 MAX_STEPS = 150              # Number of 3D navigation steps per evaluation run
 STEP_SIZE = 0.15             # 3D step movement size in meters
 TURN_ANGLE_DEG = 15          # Rotation angle in degrees per turn action
+
+# STARTING LINE COORDINATES
+START_X = 1.5
+START_Y = 1.2
+START_Z = 0.1
 
 
 # ========================================================================================================
@@ -93,7 +105,7 @@ def cast_5_rays_in_blender(cube_obj, maze_obj, max_range=8.0):
             depsgraph, origin, direction, distance=max_range
         )
 
-        if hit and hit_obj == maze_obj:
+        if hit:
             dist = (location - origin).length
         else:
             dist = max_range
@@ -130,8 +142,8 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
     actor.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
     actor.eval()
 
-    # Reset Cube to entrance start position
-    cube.location = mathutils.Vector((1.3, 1.17, 0.1))
+    # Reset Cube to entrance start position (1.5, 1.2, 0.1)
+    cube.location = mathutils.Vector((START_X, START_Y, START_Z))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
     print(f"\n🚀 Running Visual Demo: {ckpt_name} (Driving pink Cube in 3D Viewport)")
@@ -144,7 +156,7 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         obs_t = torch.FloatTensor(obs).unsqueeze(0)
 
         with torch.no_grad():
-            h_rep, logits, h_next = actor_forward(actor, agent_type, obs_t, h_state)
+            h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
 
         action = torch.argmax(logits, dim=-1).item()
         if agent_type == "C":
@@ -200,8 +212,8 @@ def run_batch_evaluation():
         actor.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
         actor.eval()
 
-        # Reset Cube to entrance position
-        cube.location = mathutils.Vector((1.3, 1.17, 0.1))
+        # Reset Cube to entrance position (1.5, 1.2, 0.1)
+        cube.location = mathutils.Vector((START_X, START_Y, START_Z))
         cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
         h_state = None
@@ -214,7 +226,7 @@ def run_batch_evaluation():
             obs_t = torch.FloatTensor(obs).unsqueeze(0)
 
             with torch.no_grad():
-                _, logits, h_next = actor_forward(actor, agent_type, obs_t, h_state)
+                _, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
 
             action = torch.argmax(logits, dim=-1).item()
             if agent_type == "C":
