@@ -50,13 +50,15 @@ def actor_forward_standalone(model, agent_type, obs, h_state=None):
 
 
 def cast_5_rays(cube_obj, maze_obj, max_range=8.0):
-    """Casts 5 continuous 3D light rays using Blender native scene.ray_cast."""
+    """Casts 5 continuous 3D light rays at mid-wall height (Z + 0.2m)."""
     scene = bpy.context.scene
     depsgraph = bpy.context.evaluated_depsgraph_get()
 
-    origin = cube_obj.location + mathutils.Vector((0, 0, 0.05))
+    # Ray origin at mid-wall height (0.2m above cube base)
+    origin = cube_obj.location + mathutils.Vector((0, 0, 0.2))
     yaw_z = cube_obj.rotation_euler.z
 
+    # Heading Z=0 faces +Y axis (green axis)
     base_heading_rad = yaw_z + (math.pi / 2.0)
     rel_angles_deg = [-90, -45, 0, 45, 90]
     distances = []
@@ -79,7 +81,7 @@ def cast_5_rays(cube_obj, maze_obj, max_range=8.0):
     return np.array(distances, dtype=np.float32)
 
 
-def bake_keyframes(ckpt_name="agent_D_task1_seed_42.pt", n_steps=200):
+def bake_keyframes(ckpt_name="agent_D_task2_seed_101.pt", n_steps=200):
     """Bakes location and rotation keyframes directly into the Blender scene."""
     if not IN_BLENDER:
         return
@@ -102,15 +104,15 @@ def bake_keyframes(ckpt_name="agent_D_task1_seed_42.pt", n_steps=200):
     # Clear existing animation keyframes on Cube
     cube.animation_data_clear()
 
-    # Set start position at corridor center (1.5, 1.2, 0.1)
-    cube.location = mathutils.Vector((1.5, 1.2, 0.1))
+    # Set start position in open corridor space (1.5, 1.5, 0.1)
+    cube.location = mathutils.Vector((1.5, 1.5, 0.1))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
-    step_size = 0.15
+    step_size = 0.25
     turn_rad = math.radians(15)
     h_state = None
 
-    print(f"🎬 Baking {n_steps} keyframes for {ckpt_name} into Blender scene...")
+    print(f"🎬 Baking {n_steps} keyframes for {ckpt_name} (Peak RDI Exploration Model) into Blender scene...")
 
     for frame in range(1, n_steps + 1):
         # Record keyframes for position and orientation at current frame
@@ -128,16 +130,26 @@ def bake_keyframes(ckpt_name="agent_D_task1_seed_42.pt", n_steps=200):
         if agent_type == "C":
             h_state = h_next
 
+        # Execute 3D physical movement (Forward action or step exploration)
         if action == 0:    # Turn Left
             cube.rotation_euler.z += turn_rad
+            heading = cube.rotation_euler.z + (math.pi / 2.0)
+            cube.location.x += (step_size * 0.5) * math.cos(heading)
+            cube.location.y += (step_size * 0.5) * math.sin(heading)
         elif action == 1:  # Turn Right
             cube.rotation_euler.z -= turn_rad
-        elif action == 2:  # Move Forward
+            heading = cube.rotation_euler.z + (math.pi / 2.0)
+            cube.location.x += (step_size * 0.5) * math.cos(heading)
+            cube.location.y += (step_size * 0.5) * math.sin(heading)
+        else:              # Move Forward
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             cube.location.x += step_size * math.cos(heading)
             cube.location.y += step_size * math.sin(heading)
 
         bpy.context.view_layer.update()
+
+        if frame % 25 == 0 or frame == 1:
+            print(f"  Frame {frame:3d}/{n_steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} | Rays: {np.round(obs, 2)}")
 
     # Set Blender timeline frame range
     bpy.context.scene.frame_start = 1
