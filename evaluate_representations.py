@@ -9,11 +9,12 @@ RESEARCH & SCIENTIFIC PURPOSE:
   This module implements the primary representation diagnostic engine for the EM-NAV study.
   Following training convergence (1,000,000 steps), all network synaptic weights are permanently frozen.
   Hidden population vectors h_rep [N, 32] are harvested across all 368 valid state profiles (x, y, heading)
-  to evaluate coordinate decodability and geometric manifold correlation:
+  and active exploration trajectories to evaluate coordinate decodability and geometric manifold correlation:
 
-  1. Tier 1: Linear Probing (Content Check)
-     - Fits un-tuned Ridge Regression probes to decode continuous (x, y) coordinates from h_rep.
-     - Low MSE and high R^2 confirm location coordinate formatting within population space.
+  1. Tier 1: 5-Fold Cross-Validated Linear Probing (Content Check)
+     - Fits Ridge Regression decoders using 5-Fold Cross-Validation (KFold n_splits=5) to predict
+       continuous (x, y) coordinates from h_rep on held-out test folds.
+     - Out-of-fold MSE and R^2 confirm location coordinate formatting within population space.
 
   2. Tier 2: Tri-Representational Similarity Analysis (Tri-RSA - Flagship Metric)
      - Computes Neural Representational Dissimilarity Matrix (RDM) using pairwise correlation distance (1 - r).
@@ -22,9 +23,14 @@ RESEARCH & SCIENTIFIC PURPOSE:
        b) Euclidean RDM (D_Euclidean): Physical 2D straight-line coordinate distance.
        c) Geodesic RDM (D_Geodesic): BFS shortest walkable path distance routing around partition walls.
 
+METHODOLOGICAL RECURRENCE NOTE:
+  - Static state sweeps evaluate instantaneous state representations with zero-history reset (h_state=None).
+  - Trajectory unrolling steps pass persistent recurrent states (h_{t-1} -> h_t) continuously across rollouts
+    to preserve path-integration temporal history for recurrent models (Agents C & D).
+
 INPUT / OUTPUT SPECIFICATIONS:
   - Input: Frozen PyTorch model checkpoint (.pt file).
-  - Output: Linear Probing R^2 score, Kendall's tau for Sensorimotor, Euclidean, and Geodesic RDMs.
+  - Output: 5-Fold Cross-Validated Linear Probing R^2 score, Kendall's tau for Sensorimotor, Euclidean, and Geodesic RDMs.
 ========================================================================================================
 """
 
@@ -34,6 +40,7 @@ import numpy as np
 import torch
 from scipy.stats import kendalltau
 from sklearn.linear_model import Ridge
+from sklearn.model_selection import KFold
 from sklearn.metrics import mean_squared_error, r2_score
 
 from minigrid.envs import EmptyEnv
@@ -86,71 +93,119 @@ def compute_geodesic_distance_matrix(grid, width, height):
 
 
 # ========================================================================================================
-# 2. HARVEST HIDDEN REPRESENTATIONS ACROSS MAZE
+# 2. HARVEST HIDDEN REPRESENTATIONS (WITH CONTINUOUS TRAJECTORY UNROLLING FOR RECURRENT MEMORY)
 # ========================================================================================================
-def harvest_representations(model, agent_type, maze_size=12):
+def harvest_representations(model, agent_type, maze_size=12, unroll_trajectory=False, n_unroll_steps=2000):
     """
-    Sweeps every valid (x, y, heading) state in the maze to harvest:
-      - Hidden representation vectors h_rep [N, 32]
-      - Sensory 5-ray vectors sensor_obs [N, 5]
-      - Spatial coordinates (x, y) [N, 2]
+    Harvests hidden population representations across maze states.
+    
+    Args:
+        model (nn.Module): Frozen PyTorch network model.
+        agent_type (str): 'A', 'B', 'C', or 'D'.
+        maze_size (int): Grid width/height (12).
+        unroll_trajectory (bool): If True, unrolls a continuous exploration path carrying h_state forward
+                                 to preserve path-integration memory history for Agents C & D.
+        n_unroll_steps (int): Number of continuous steps to unroll when unroll_trajectory is True.
+        
+    Returns:
+        tuple: (h_reps, sensor_obss, positions, grid)
     """
     base_env = EmptyEnv(size=maze_size, render_mode=None)
-    base_env.reset()
+    base_env.reset(seed=42)
     grid = base_env.unwrapped.grid
     # Insert central partition wall (x=6, y=2..9)
     for y in range(2, maze_size - 2):
         grid.set(maze_size // 2, y, Wall())
 
     wrapper = EgocentricRaycastWrapper(base_env)
+    model.eval()
 
     h_reps, sensor_obss, positions = [], [], []
-    h_state = None
 
-    model.eval()
-    with torch.no_grad():
-        for x in range(grid.width):
-            for y in range(grid.height):
-                cell = grid.get(x, y)
-                if cell is not None and cell.type in ['wall', 'door']:
-                    continue
-                for heading in range(4):
-                    base_env.unwrapped.agent_pos = (x, y)
-                    base_env.unwrapped.agent_dir = heading
+    if unroll_trajectory:
+        # Trajectory Unrolling Mode: Continuously steps through environment carrying h_state
+        obs, _ = wrapper.reset(seed=42)
+        h_state = None
+        with torch.no_grad():
+            for step in range(n_unroll_steps):
+                pos = base_env.unwrapped.agent_pos
+                obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
+                
+                h_rep, logits, h_next = actor_forward(model, agent_type, obs_tensor, h_state)
+                
+                h_reps.append(h_rep.squeeze(0).cpu().numpy())
+                sensor_obss.append(obs)
+                positions.append(pos)
+                
+                action = torch.argmax(logits, dim=-1).item()
+                obs, _, term, trunc, _ = wrapper.step(action)
+                done = term or trunc
+                
+                if done:
+                    obs, _ = wrapper.reset()
+                    h_state = None
+                else:
+                    h_state = h_next
+    else:
+        # Static Grid Sweep Mode: Sweeps all 368 valid (x, y, heading) state profiles
+        h_state = None
+        with torch.no_grad():
+            for x in range(grid.width):
+                for y in range(grid.height):
+                    cell = grid.get(x, y)
+                    if cell is not None and cell.type in ['wall', 'door']:
+                        continue
+                    for heading in range(4):
+                        base_env.unwrapped.agent_pos = (x, y)
+                        base_env.unwrapped.agent_dir = heading
 
-                    obs = wrapper.observation(None)
-                    obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
+                        obs = wrapper.observation(None)
+                        obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
 
-                    h_rep, _, h_next = actor_forward(model, agent_type, obs_tensor, h_state)
+                        h_rep, _, h_next = actor_forward(model, agent_type, obs_tensor, h_state)
 
-                    h_reps.append(h_rep.squeeze(0).cpu().numpy())
-                    sensor_obss.append(obs)
-                    positions.append((x, y))
+                        h_reps.append(h_rep.squeeze(0).cpu().numpy())
+                        sensor_obss.append(obs)
+                        positions.append((x, y))
 
     return np.array(h_reps), np.array(sensor_obss), np.array(positions), grid
 
 
 # ========================================================================================================
-# 3. PHASE 2: LINEAR PROBING DECODER (CONTENT CHECK)
+# 3. PHASE 2: 5-FOLD CROSS-VALIDATED LINEAR PROBING DECODER
 # ========================================================================================================
-def evaluate_linear_probing(h_reps, positions):
+def evaluate_linear_probing(h_reps, positions, n_splits=5):
     """
-    Trains un-tuned Ridge Regression probes to decode continuous (x, y) coordinates from h_rep.
-    Returns Mean Squared Error (MSE) and R^2 score.
+    Trains un-tuned Ridge Regression probes using 5-Fold Cross-Validation (KFold n_splits=5)
+    to predict true (x, y) continuous coordinates from h_rep on held-out test sets.
+    
+    Returns:
+        tuple: (mean_out_of_fold_mse, mean_out_of_fold_r2)
     """
-    ridge_x = Ridge(alpha=1.0).fit(h_reps, positions[:, 0])
-    ridge_y = Ridge(alpha=1.0).fit(h_reps, positions[:, 1])
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
+    
+    r2_x_scores, r2_y_scores = [], []
+    mse_x_scores, mse_y_scores = [], []
 
-    pred_x = ridge_x.predict(h_reps)
-    pred_y = ridge_y.predict(h_reps)
+    for train_idx, test_idx in kf.split(h_reps):
+        X_train, X_test = h_reps[train_idx], h_reps[test_idx]
+        pos_train, pos_test = positions[train_idx], positions[test_idx]
 
-    mse_x = mean_squared_error(positions[:, 0], pred_x)
-    mse_y = mean_squared_error(positions[:, 1], pred_y)
-    r2_x  = r2_score(positions[:, 0], pred_x)
-    r2_y  = r2_score(positions[:, 1], pred_y)
+        # Fit Ridge regression on training fold
+        ridge_x = Ridge(alpha=1.0).fit(X_train, pos_train[:, 0])
+        ridge_y = Ridge(alpha=1.0).fit(X_train, pos_train[:, 1])
 
-    total_mse = (mse_x + mse_y) / 2.0
-    total_r2  = (r2_x + r2_y) / 2.0
+        # Predict on held-out test fold
+        pred_x = ridge_x.predict(X_test)
+        pred_y = ridge_y.predict(X_test)
+
+        mse_x_scores.append(mean_squared_error(pos_test[:, 0], pred_x))
+        mse_y_scores.append(mean_squared_error(pos_test[:, 1], pred_y))
+        r2_x_scores.append(r2_score(pos_test[:, 0], pred_x))
+        r2_y_scores.append(r2_score(pos_test[:, 1], pred_y))
+
+    total_mse = (np.mean(mse_x_scores) + np.mean(mse_y_scores)) / 2.0
+    total_r2  = (np.mean(r2_x_scores) + np.mean(r2_y_scores)) / 2.0
     return total_mse, total_r2
 
 
@@ -216,7 +271,7 @@ def evaluate_tri_rsa(h_reps, sensor_obss, positions, grid):
 # 5. DIAGNOSTIC PIPELINE RUNNER
 # ========================================================================================================
 def run_diagnostic_pipeline(checkpoint_dir="checkpoints"):
-    """Runs Phase 2 Linear Probing and Phase 3 Tri-RSA across all saved checkpoints."""
+    """Runs Phase 2 (5-Fold CV Linear Probing) and Phase 3 (Tri-RSA) across all saved checkpoints."""
     checkpoint_files = sorted(glob.glob(os.path.join(checkpoint_dir, "*.pt")))
     if not checkpoint_files:
         print(f"❌ No checkpoints found in {checkpoint_dir}/")
@@ -224,11 +279,11 @@ def run_diagnostic_pipeline(checkpoint_dir="checkpoints"):
 
     agent_map = {"A": AgentA_MLP, "B": AgentB_FFSNN, "C": AgentC_RNN, "D": AgentD_RSNN}
 
-    print("=" * 78)
-    print("🔬 EM-NAV: REPRESENTATION DIAGNOSTIC ENGINE (PHASES 2 & 3)")
-    print("=" * 78)
-    print(f"{'Checkpoint':<32} | {'Linear R²':<10} | {'Sensor τ':<10} | {'Euclid τ':<10} | {'Geodesic τ':<10}")
-    print("-" * 78)
+    print("=" * 82)
+    print("🔬 EM-NAV: REPRESENTATION DIAGNOSTIC ENGINE (PHASES 2 & 3 - 5-FOLD CV PROBING)")
+    print("=" * 82)
+    print(f"{'Checkpoint':<32} | {'CV R² Score':<12} | {'Sensor τ':<10} | {'Euclid τ':<10} | {'Geodesic τ':<10}")
+    print("-" * 82)
 
     for ckpt_path in checkpoint_files:
         fname = os.path.basename(ckpt_path)
@@ -238,12 +293,12 @@ def run_diagnostic_pipeline(checkpoint_dir="checkpoints"):
         model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
 
         h_reps, sensor_obss, positions, grid = harvest_representations(model, agent_type)
-        _, r2 = evaluate_linear_probing(h_reps, positions)
+        _, r2_cv = evaluate_linear_probing(h_reps, positions)
         tau_sensor, tau_euclid, tau_geodesic = evaluate_tri_rsa(h_reps, sensor_obss, positions, grid)
 
-        print(f"{fname:<32} | {r2:<10.3f} | {tau_sensor:<10.3f} | {tau_euclid:<10.3f} | {tau_geodesic:<10.3f}")
+        print(f"{fname:<32} | {r2_cv:<12.3f} | {tau_sensor:<10.3f} | {tau_euclid:<10.3f} | {tau_geodesic:<10.3f}")
 
-    print("=" * 78)
+    print("=" * 82)
 
 
 if __name__ == "__main__":

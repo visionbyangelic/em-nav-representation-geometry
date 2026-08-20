@@ -1,7 +1,6 @@
-
 # EM-NAV: Investigating the Role of Sparsity, Spiking Dynamics, and Recurrence in the Geometry and Transferability of Spatial Representations
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
 
@@ -85,7 +84,6 @@ The project features a tightly integrated two-environment platform strategy expl
 
 The agent experiences the environment entirely through a **5-Ray Egocentric Input Vector**:
 
-
 $$\mathbf{x}_t = [d_{\text{left}}, d_{\text{diag\_left}}, d_{\text{front}}, d_{\text{diag\_right}}, d_{\text{right}}]$$
 
 Rays map continuous normalized distances $\in [0.0, 1.0]$ up to a max range of 8 units. Because global maps, absolute coordinates, and target-pointing vectors are completely removed, the environment exhibits severe **perceptual aliasing** (physically distant corridors yielding identical local sensor readings). This ensures the agent cannot solve the task reflexively and forces the network to build a persistent internal map to resolve location ambiguity.
@@ -114,8 +112,6 @@ Agents are optimized using Proximal Policy Optimization (PPO) across a pilot bas
 
 $$R_t = \frac{1}{\sqrt{N(x,y)}}$$
 
-
-
 ---
 
 ## 7. The Project Tech Stack
@@ -129,6 +125,7 @@ $$R_t = \frac{1}{\sqrt{N(x,y)}}$$
 | **Gymnasium** | Enforces standardized RL environment wrappers, state step logic, and action processing boundaries. |
 | **NumPy / SciPy** | Drives the analytical math backend; handles matrix discretization, spatial metrics, and statistical correlation tracking. |
 | **Matplotlib** | Generates primary publication graphics, single-cell rate heatmaps, and spatial information density curves. |
+| **Scikit-Learn** | Linear Probing Ridge decoders, $k$-fold cross-validation, and metrics. |
 
 ---
 
@@ -149,14 +146,13 @@ Following training convergence ($1 \times 10^6$ steps), all network synaptic wei
 │ Content Check     │        │ Geometry Check    │        │ Cell Tuning       │
 │ Decodes absolute  │        │ Correlates RDM vs.│        │ Visualizes fields │
 │ (x, y) position   │        │ Sensorimotor,     │        │ scored via Skaggs │
-│ from population.  │        │ Euclid, & Geodesic│        │ shuffle controls. │
+│ via 5-Fold CV.    │        │ Euclid, & Geodesic│        │ shuffle controls. │
 └───────────────────┘        └───────────────────┘        └───────────────────┘
-
 ```
 
 ### Tier 1: Linear Probing (Content Check)
 
-Trains an un-tuned linear ridge regression decoder to predict true $(x, y)$ coordinate strings from frozen hidden vectors. A low Mean Squared Error (MSE) confirms that absolute location data is explicitly formatted within the network manifold.
+Trains an un-tuned linear ridge regression decoder with 5-Fold Cross Validation to predict true $(x, y)$ coordinate strings from frozen hidden vectors. A low Mean Squared Error (MSE) and high $R^2$ confirm that absolute location data is explicitly formatted within the network manifold.
 
 ### Tier 2: Tri-Representational Similarity Analysis (Flagship Metric)
 
@@ -189,21 +185,24 @@ By re-computing the network RDMs inside the continuous space, the project maps t
 ## 📂 Repository Structure
 
 ```text
-├── src/
-│   ├── environments/       # Custom Gym wrappers for egocentric ray-marching
-│   ├── models/             # PyTorch & snnTorch network definitions (A, B, C, D)
-│   ├── training/           # PPO loop scaffolding and multi-task reward setups
-│   └── analysis/           # Linear probing, Tri-RSA, and Milestone 0 tools
-├── blender/                # Continuous Sensorimotor Evaluation runtime hooks
-└── requirements.txt        # Verified dependency ecosystem
-
+├── wrappers/                 # Custom Gym wrappers for egocentric ray-marching
+├── models.py                 # PyTorch & snnTorch network definitions (A, B, C, D)
+├── train.py                  # Multi-task PPO RL training engine with detached critic
+├── kaggle_train_all.py       # Standalone Kaggle GPU training launcher for 100% reproducibility
+├── evaluate_representations.py # Phase 2 & 3 Linear Probing (R²) and Tri-RSA (Kendall's τ) engine
+├── evaluate_single_units.py  # Phase 4 Skaggs Spatial Information Index (I) engine
+├── stage_zero_scan.py        # Phase 0 baseline perceptual aliasing scan engine
+├── test_init.py              # System initialization & hardware capability verification script
+├── track.md                  # Detailed progress tracker, compute audit & empirical results
+├── OVERVIEW.md               # Executive project summary & step-by-step journey
+├── blender/                  # Continuous Sensorimotor Evaluation runtime hooks
+└── requirements.txt          # Verified dependency ecosystem
 ```
 
 ---
 
 ## 📜 License & Citation
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](file:///c:/Users/nerdyalgorithm/Desktop/top%20project/em-nav-representation-geometry/LICENSE) file for details.
 
 If you use this framework or the Tri-RSA methodology in your research, please cite this work.
-
