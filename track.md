@@ -99,7 +99,16 @@
 
 ### **Challenge 4: Action Granularity & Rotation Mismatch ($90^\circ$ vs $15^\circ$)**
 - **Problem**: In MiniGrid training, a single turn action rotates the agent by $90^\circ$ (instantly updating ray sensor profiles). In early Blender evaluations, `TURN_ANGLE_DEG = 15` was used, causing the agent to see nearly identical sensor readings after a single turn and getting stuck in a $15^\circ$ rotation loop.
-- **Resolution**: Aligned `blender/run_blender_eval.py` turn granularity to **`TURN_ANGLE_DEG = 90`** (matching MiniGrid counter-clockwise/clockwise $90^\circ$ discrete turn actions) and `STEP_SIZE = 1.0`.
+- **Resolution**: Aligned `blender/run_blender_eval.py` turn granularity to **`TURN_ANGLE_DEG = 90`** (matching MiniGrid counter-clockwise/clockwise $90^\circ$ discrete turn actions).
+
+### **Challenge 5: Step Size Exceeding Corridor Width (Agent Escapes Maze)**
+- **Problem**: After fixing the $90^\circ$ turn granularity (Challenge 4), `STEP_SIZE` was set to `1.0` (matching MiniGrid's 1-tile step). However, the 3D Blender maze corridors are only ~0.5m wide. A 1.0m forward step causes the agent cube to clip straight through the corridor walls and escape the maze entirely. The agent was observed driving in a straight line from `(1.50, 1.75)` to `(1.50, 51.50)` — far outside the maze boundaries.
+- **Root Cause**: MiniGrid uses discrete tile coordinates where "1 step = 1 tile" and collisions are handled by the grid engine. In continuous 3D Blender space, there is no collision engine — the cube simply teleports through geometry if the step exceeds the wall thickness.
+- **Resolution**: Reduced `STEP_SIZE` from `1.0` to `0.30` meters, ensuring each forward step stays within corridor boundaries and the agent cannot phase through walls.
+
+### **Challenge 6: Start Position Outside Maze Interior**
+- **Problem**: Previous start positions (`(1.30, 1.17)` and `(1.50, 1.50)`) placed the agent either at the maze entrance threshold or in an open area near the edge, allowing the agent to immediately walk outside the maze walls before encountering any corridor geometry.
+- **Resolution**: Relocated the agent start position to `(0.833, 1.149, 0.1)` — a position confirmed (via Blender's Transform panel) to be inside the maze interior corridor walls, ensuring the agent begins surrounded by detectable wall geometry on its ray sensors.
 
 ---
 
