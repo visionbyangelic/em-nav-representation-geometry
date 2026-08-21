@@ -2,7 +2,25 @@
 
 > **Project Title:** EM-NAV: Investigating the Role of Sparsity, Spiking Dynamics, and Recurrence in the Geometry and Transferability of Spatial Representations  
 > **Author:** Angelic Charles  
-> **Repository:** [visionbyangelic/em-nav-representation-geometry](https://github.com/visionbyangelic/em-nav-representation-geometry)
+> **Repository:** [visionbyangelic/em-nav-representation-geometry](https://github.com/visionbyangelic/em-nav-representation-geometry)  
+> **Status:** 🚧 **WORK IN PROGRESS** — Phase 6 (3D Blender Transfer) is under active development.
+
+---
+
+## ⚠️ PROJECT STATUS
+
+> **This project is NOT complete.** The core training pipeline and representation analysis (Phases 0–5) are finished. Phase 6 — deploying the trained agents into a real 3D Blender maze for zero-shot continuous transfer evaluation — is actively being developed and debugged. See `track.md` Section 3 for the full engineering troubleshooting log (Challenges 1–10 and counting).
+
+| Phase | Description | Status |
+| :---: | :--- | :---: |
+| 0 | Environment Scan & Perceptual Aliasing Baseline | ✅ Complete |
+| 1 | Architecture Construction & PPO Training (24 models) | ✅ Complete |
+| 2 | Linear Probing & Tri-RSA Representation Diagnostics | ✅ Complete |
+| 3 | Skaggs Spatial Information Index & Place Cell Tuning | ✅ Complete |
+| 4 | Single-Unit Spatial Firing Rate Heatmaps | ✅ Complete |
+| 5 | Pre-Registration Decision Gate (Welch's $t$-test) | ✅ Complete |
+| 6 | 3D Blender Zero-Shot Continuous Transfer | 🚧 **In Progress** |
+| 7 | Paper Writing & Final Figures | ❌ Not Started |
 
 ---
 
@@ -54,12 +72,22 @@ We wanted to answer a fundamental question:
 
 ---
 
-## 4. 3D BLENDER CONTINUOUS EVALUATION PLAN (EASY VS. HARD MAZE)
+## 4. 3D BLENDER CONTINUOUS EVALUATION (PHASE 6 — IN PROGRESS 🚧)
 
-To evaluate zero-shot continuous transfer in 3D Blender physics, we deploy frozen trained model weights across two distinct 3D environments:
+### **Goal**:
+Deploy the frozen trained model weights into a real 3D Blender maze environment to evaluate zero-shot continuous transfer — can an agent trained in a discrete 2D grid navigate a continuous 3D world?
 
-1. **Easy 3D Maze (`easy_maze.blend`)**: A clean, simplified 4-room 3D layout to test basic continuous physics and 3D raycast sensor transfer.
-2. **Hard 3D Maze (`hard_maze.blend`)**: A full, complex 3D Backrooms labyrinth mesh to test topological generalization under extreme perceptual aliasing.
+### **Current Status**:
+- ✅ 3D maze scene built in Blender (`blender/em-nav Maze.blend`)
+- ✅ PyTorch + snntorch installed inside Blender's embedded Python
+- ✅ Native 3D raycasting engine operational (`blender/run_blender_eval.py`)
+- ✅ Agent D confirmed moving through 3D corridors with stochastic policy sampling
+- 🚧 Tuning step size, start position, and collision handling for reliable navigation
+- ❌ Final trajectory recording and figure generation not started
+- ❌ Comparative evaluation of all 4 agent types in 3D not started
+
+### **Engineering Challenges Encountered So Far** (see `track.md` Section 3 for full details):
+10 engineering challenges documented and resolved, including: ray sensor calibration, Python DLL path conflicts, action granularity mismatches ($90°$ vs $15°$ turns), step size vs corridor width scaling, baked keyframe animation conflicts, Blender UI freezing, and greedy argmax vs stochastic PPO sampling.
 
 ---
 
@@ -67,13 +95,17 @@ To evaluate zero-shot continuous transfer in 3D Blender physics, we deploy froze
 
 | File Name | Purpose in Plain English |
 | :--- | :--- |
-| **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and 3D Blender plan (this file). |
-| **`track.md`** | Comprehensive scientific progress log, GPU compute audit, and full 24-model empirical evaluation tables. |
+| **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and current status (this file). |
+| **`track.md`** | Comprehensive scientific progress log, engineering troubleshooting log, and full 24-model empirical evaluation tables. |
 | **`models.py`** | PyTorch & snnTorch neural network definitions for Agents A, B, C, and D ($H=32$). |
 | **`train.py`** | Main PPO reinforcement learning training engine with detached value head safeguards. |
 | **`kaggle_train_all.py`** | Self-contained, standalone Kaggle GPU training launcher for 100% scientific reproducibility. |
 | **`evaluate_representations.py`**| Diagnostic tool for Linear Probing ($R^2$) and Tri-RSA (Kendall's $\tau$) geometry evaluations. |
 | **`evaluate_single_units.py`** | Diagnostic tool for Skaggs Spatial Information Index ($I$) and 2D spatial firing rate heatmaps. |
+| **`evaluate_decision_gate.py`** | Phase 5 pre-registration decision gate with Welch's $t$-test statistical verification. |
 | **`stage_zero_scan.py`** | Pre-registration environment scan quantifying baseline perceptual aliasing density (81.52%). |
-| **`test_init.py`** | System initialization & hardware capability verification script. |
+| **`blender/run_blender_eval.py`** | 3D Blender live evaluation script — drives the agent through the maze using native raycasting. |
+| **`blender/continuous_eval.py`** | Continuous transfer engine computing Representational Drift Index (RDI). |
+| **`blender/bake_keyframes.py`** | Keyframe animation baker for Blender playback (experimental). |
+| **`blender/em-nav Maze.blend`** | The 3D Blender maze scene file with agent cube and maze geometry. |
 | **`checkpoints/`** | Directory containing all 24 trained model weight files (`.pt`). |
