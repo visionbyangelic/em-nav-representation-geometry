@@ -10,10 +10,9 @@ RESEARCH & SCIENTIFIC PURPOSE:
   It connects the 3D scene objects (the pink 'Cube' agent at (1.5, 1.2, 0.1) and 'Maze' mesh)
   with your 24 trained PyTorch checkpoints (Agents A, B, C, D across tasks & seeds).
 
-MODES:
-  - VISUAL_MODE (True): Drives the pink Cube live in the 3D viewport step-by-step.
-  - BATCH_MODE (True): Sweeps all 24 checkpoints, evaluates continuous 3D navigation, and prints
-    the complete summary table directly in Blender's System Console.
+ACTION GRANULARITY ALIGNMENT:
+  - MiniGrid Training Dynamics: 1 Turn Action = 90° rotation, 1 Forward Action = 1.0 tile step.
+  - Aligned Settings: TURN_ANGLE_DEG = 90, STEP_SIZE = 1.0 (matching exact training dynamics).
 ========================================================================================================
 """
 
@@ -56,15 +55,15 @@ def actor_forward_standalone(model, agent_type, obs, h_state=None):
 
 
 # ========================================================================================================
-# CONFIGURATION OPTIONS
+# CONFIGURATION OPTIONS (ALIGNED WITH MINIGRID TRAINING DYNAMICS)
 # ========================================================================================================
 VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Viewport
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = True            # Set to True to evaluate all 24 checkpoints automatically
 MAX_STEPS = 150              # Number of 3D navigation steps per evaluation run
-STEP_SIZE = 0.15             # 3D step movement size in meters
-TURN_ANGLE_DEG = 15          # Rotation angle in degrees per turn action
+STEP_SIZE = 1.0              # 3D step movement size (1.0 unit matching MiniGrid tile step)
+TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
 # STARTING LINE COORDINATES
 START_X = 1.5
@@ -89,7 +88,7 @@ def cast_5_rays_in_blender(cube_obj, maze_obj, max_range=8.0):
     depsgraph = bpy.context.evaluated_depsgraph_get()
 
     # Ray origin slightly above cube base
-    origin = cube_obj.location + mathutils.Vector((0, 0, 0.05))
+    origin = cube_obj.location + mathutils.Vector((0, 0, 0.2))
     yaw_z = cube_obj.rotation_euler.z  # Cube yaw angle in radians
 
     # Forward direction faces +Y axis when yaw_z = 0
@@ -146,10 +145,10 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
     cube.location = mathutils.Vector((START_X, START_Y, START_Z))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
-    print(f"\n🚀 Running Visual Demo: {ckpt_name} (Driving pink Cube in 3D Viewport)")
+    print(f"\n🚀 Running Visual Demo: {ckpt_name} (Driving pink Cube in 3D Viewport with 90° Turn Alignment)")
 
     h_state = None
-    turn_rad = math.radians(TURN_ANGLE_DEG)
+    turn_rad = math.radians(TURN_ANGLE_DEG)  # 90° turn
 
     for s in range(steps):
         obs = cast_5_rays_in_blender(cube, maze)
@@ -162,12 +161,12 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         if agent_type == "C":
             h_state = h_next
 
-        # Execute 3D physical movement
-        if action == 0:    # Turn Left
+        # Execute 3D physical movement (Aligned with MiniGrid action dynamics)
+        if action == 0:    # Turn Left (+90° counter-clockwise)
             cube.rotation_euler.z += turn_rad
-        elif action == 1:  # Turn Right
+        elif action == 1:  # Turn Right (-90° clockwise)
             cube.rotation_euler.z -= turn_rad
-        elif action == 2:  # Move Forward
+        elif action == 2 or action == 3:  # Move Forward
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             cube.location.x += STEP_SIZE * math.cos(heading)
             cube.location.y += STEP_SIZE * math.sin(heading)
@@ -176,7 +175,7 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         bpy.context.view_layer.update()
 
         if s % 25 == 0 or s == steps - 1:
-            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Ray Distances: {np.round(obs, 2)}")
+            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} | Ray Distances: {np.round(obs, 2)}")
 
     print(f"✅ Visual Demo Complete for {ckpt_name}!\n")
 
@@ -195,7 +194,7 @@ def run_batch_evaluation():
         return
 
     print("=" * 84)
-    print("🛸 EM-NAV: BLENDER 3D NATIVE BATCH MODEL EVALUATION ENGINE")
+    print("🛸 EM-NAV: BLENDER 3D NATIVE BATCH MODEL EVALUATION ENGINE (90° ALIGNED)")
     print("=" * 84)
     print(f"{'Checkpoint':<32} | {'Final Position (X, Y)':<22} | {'Avg Ray Sensor Value':<20}")
     print("-" * 84)
@@ -236,7 +235,7 @@ def run_batch_evaluation():
                 cube.rotation_euler.z += turn_rad
             elif action == 1:
                 cube.rotation_euler.z -= turn_rad
-            elif action == 2:
+            elif action == 2 or action == 3:
                 heading = cube.rotation_euler.z + (math.pi / 2.0)
                 cube.location.x += STEP_SIZE * math.cos(heading)
                 cube.location.y += STEP_SIZE * math.sin(heading)

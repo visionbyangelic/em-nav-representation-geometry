@@ -97,6 +97,10 @@
 - **Problem**: Continuous 3D space allows smooth, non-grid orientations, producing higher sensory variance than discrete 2D grid tiles.
 - **Resolution**: Confirmed that **Agent D (RSNN + Sparsity)** maintains minimal representational drift ($\text{RDI} = 0.9622$), demonstrating that biological population sparsity acts as a structural regularizer against physical transfer drift.
 
+### **Challenge 4: Action Granularity & Rotation Mismatch ($90^\circ$ vs $15^\circ$)**
+- **Problem**: In MiniGrid training, a single turn action rotates the agent by $90^\circ$ (instantly updating ray sensor profiles). In early Blender evaluations, `TURN_ANGLE_DEG = 15` was used, causing the agent to see nearly identical sensor readings after a single turn and getting stuck in a $15^\circ$ rotation loop.
+- **Resolution**: Aligned `blender/run_blender_eval.py` turn granularity to **`TURN_ANGLE_DEG = 90`** (matching MiniGrid counter-clockwise/clockwise $90^\circ$ discrete turn actions) and `STEP_SIZE = 1.0`.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table
