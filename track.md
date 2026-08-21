@@ -110,6 +110,11 @@
 - **Problem**: Previous start positions (`(1.30, 1.17)` and `(1.50, 1.50)`) placed the agent either at the maze entrance threshold or in an open area near the edge, allowing the agent to immediately walk outside the maze walls before encountering any corridor geometry.
 - **Resolution**: Relocated the agent start position to `(0.833, 1.149, 0.1)` — a position confirmed (via Blender's Transform panel) to be inside the maze interior corridor walls, ensuring the agent begins surrounded by detectable wall geometry on its ray sensors.
 
+### **Challenge 7: Baked Keyframe Animation Overriding Live Policy Decisions**
+- **Problem**: The `bake_keyframes.py` script saved hardcoded keyframe animation data directly into `em-nav Maze.blend` using `bpy.ops.wm.save_mainfile()`. Even after switching to `run_blender_eval.py` (which uses live model inference), the previously baked keyframes persisted inside the `.blend` file and overrode the Cube's position/rotation at every frame — making it appear as if the agent was still following the old straight-line trajectory regardless of the model's actual decisions.
+- **Root Cause**: Blender's animation system evaluates keyframes at a higher priority than script-driven property changes. Once keyframes are baked into an object, they control that object's transform unless explicitly cleared.
+- **Resolution**: Added `cube.animation_data_clear()` at the start of both `run_visual_demo()` and `run_batch_evaluation()` to wipe any residual baked keyframes before live policy evaluation begins.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table

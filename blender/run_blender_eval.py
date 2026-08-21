@@ -129,6 +129,10 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         print("❌ Error: Could not find 'Cube' or 'Maze' in Scene Collection.")
         return
 
+    # CRITICAL: Clear any previously baked keyframe animations from the Cube
+    # (bake_keyframes.py saved hardcoded animation data into the .blend file)
+    cube.animation_data_clear()
+
     ckpt_path = os.path.join(repo_root, "checkpoints", ckpt_name)
     if not os.path.exists(ckpt_path):
         print(f"❌ Error: Checkpoint file not found: {ckpt_path}")
@@ -141,7 +145,7 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
     actor.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
     actor.eval()
 
-    # Reset Cube to exact transform position (0.833, 1.149, 0.1)
+    # Reset Cube to starting position inside the maze
     cube.location = mathutils.Vector((START_X, START_Y, START_Z))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
@@ -203,6 +207,9 @@ def run_batch_evaluation():
     maze = bpy.data.objects.get("Maze")
     agent_map = {"A": AgentA_MLP, "B": AgentB_FFSNN, "C": AgentC_RNN, "D": AgentD_RSNN}
 
+    # Clear any previously baked keyframe animations
+    cube.animation_data_clear()
+
     for ckpt_path in ckpt_files:
         fname = os.path.basename(ckpt_path)
         agent_type = fname.split("_")[1]
@@ -211,7 +218,7 @@ def run_batch_evaluation():
         actor.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
         actor.eval()
 
-        # Reset Cube to exact position (0.833, 1.149, 0.1)
+        # Reset Cube to starting position inside the maze
         cube.location = mathutils.Vector((START_X, START_Y, START_Z))
         cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
