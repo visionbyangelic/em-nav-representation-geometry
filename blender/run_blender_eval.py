@@ -60,8 +60,8 @@ def actor_forward_standalone(model, agent_type, obs, h_state=None):
 VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Viewport
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
-BATCH_MODE = True            # Set to True to evaluate all 24 checkpoints automatically
-MAX_STEPS = 150              # Number of 3D navigation steps per evaluation run
+BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
+MAX_STEPS = 50               # Number of 3D navigation steps (keep low to avoid UI freeze)
 STEP_SIZE = 0.30             # 3D step size matched to corridor width (0.30 meters)
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 

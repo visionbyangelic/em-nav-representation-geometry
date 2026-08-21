@@ -115,6 +115,10 @@
 - **Root Cause**: Blender's animation system evaluates keyframes at a higher priority than script-driven property changes. Once keyframes are baked into an object, they control that object's transform unless explicitly cleared.
 - **Resolution**: Added `cube.animation_data_clear()` at the start of both `run_visual_demo()` and `run_batch_evaluation()` to wipe any residual baked keyframes before live policy evaluation begins.
 
+### **Challenge 8: Blender UI Freeze During Script Execution**
+- **Problem**: Running `run_blender_eval.py` from Blender's Scripting tab with `BATCH_MODE = True` caused the laptop to hang completely. The script was executing 24 checkpoints × 150 steps = 3,600 inference steps (each involving PyTorch forward passes and Blender raycasting) on Blender's single main UI thread, blocking all rendering and input.
+- **Resolution**: Disabled `BATCH_MODE` (set to `False`) and reduced `MAX_STEPS` from 150 to 50 for interactive testing. Batch evaluation should only be run via CLI with the `-b` (background/headless) flag.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table
