@@ -62,13 +62,13 @@ SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
 MAX_STEPS = 50               # Number of 3D navigation steps (keep low to avoid UI freeze)
-STEP_SIZE = 0.30             # 3D step size matched to corridor width (0.30 meters)
+STEP_SIZE = 0.50             # 3D step size matched to 3x-scaled corridor width
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
-# STARTING LINE COORDINATES (MATCHING USER SCREENSHOT POS)
-START_X = 0.833
-START_Y = 1.149
-START_Z = 0.100
+# STARTING LINE COORDINATES (inside 3x-scaled maze corridor)
+START_X = 3.141
+START_Y = 3.5565
+START_Z = 0.300
 
 
 # ========================================================================================================
@@ -161,11 +161,14 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         with torch.no_grad():
             h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
 
-        action = torch.argmax(logits, dim=-1).item()
+        # Sample action from policy distribution (matching PPO training, NOT greedy argmax)
+        dist = torch.distributions.Categorical(logits=logits)
+        action = dist.sample().item()
+        logits_np = logits.squeeze().numpy()
         if agent_type == "C":
             h_state = h_next
 
-        # Execute 3D physical movement (90° turns + 0.30m steps matched to corridor width)
+        # Execute 3D physical movement (90° turns + 0.50m steps matched to 3x corridor width)
         if action == 0:    # Turn Left (+90° counter-clockwise)
             cube.rotation_euler.z += turn_rad
         elif action == 1:  # Turn Right (-90° clockwise)
@@ -178,8 +181,10 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         # Force Blender 3D Viewport refresh
         bpy.context.view_layer.update()
 
-        if s % 25 == 0 or s == steps - 1:
-            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} | Ray Distances: {np.round(obs, 2)}")
+        # Print EVERY step for first 10, then every 25 after that
+        if s < 10 or s % 25 == 0 or s == steps - 1:
+            action_names = {0: "TURN_L", 1: "TURN_R", 2: "FWD", 3: "FWD"}
+            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}) | Rays: {np.round(obs, 2)} | Logits: {np.round(logits_np, 3)}")
 
     print(f"✅ Visual Demo Complete for {ckpt_name}!\n")
 

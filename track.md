@@ -119,6 +119,15 @@
 - **Problem**: Running `run_blender_eval.py` from Blender's Scripting tab with `BATCH_MODE = True` caused the laptop to hang completely. The script was executing 24 checkpoints × 150 steps = 3,600 inference steps (each involving PyTorch forward passes and Blender raycasting) on Blender's single main UI thread, blocking all rendering and input.
 - **Resolution**: Disabled `BATCH_MODE` (set to `False`) and reduced `MAX_STEPS` from 150 to 50 for interactive testing. Batch evaluation should only be run via CLI with the `-b` (background/headless) flag.
 
+### **Challenge 9: Maze Corridor Width Too Narrow for 3D Navigation**
+- **Problem**: The original maze geometry had corridors only ~0.3–0.5m wide. At this scale, the agent's ray sensors detected walls at distances of 0.02–0.16 (normalized) in almost every direction, leaving no meaningful sensor variation for the policy to distinguish "open corridor" from "wall ahead." The agent was stuck choosing Turn Left (Action 0) indefinitely because it never saw enough clearance to trigger a forward action.
+- **Resolution**: Scaled the entire Maze object by 3× in Blender (new dimensions: 8.55m × 8.55m × 1.56m), widening all corridors proportionally. Scaled the Cube agent to `(0.1, 0.1, 0.1)` for visibility. Relocated start position to `(3.141, 3.5565, 0.3)` — confirmed inside a wide corridor via Blender's Transform panel. Increased `STEP_SIZE` from 0.30 to 0.50m to match the larger corridor geometry.
+
+### **Challenge 10: Greedy Argmax Action Selection vs Stochastic PPO Policy**
+- **Problem**: The Agent D (RSNN) model outputs nearly flat logits (e.g., `[0.15, 0.00, 0.10, 0.00]`), meaning the difference between "Turn Left" and "Move Forward" is often just 1 spike out of T=20 timesteps. Using `torch.argmax()` for action selection always breaks ties toward index 0 (Turn Left), causing the agent to spin in place indefinitely even when the forward path is clear.
+- **Root Cause**: During PPO training, actions were **sampled** from a `Categorical(logits=...)` distribution, not taken greedily. The model learned a stochastic policy that relies on probabilistic sampling to explore. Argmax removes this stochasticity entirely.
+- **Resolution**: Replaced `torch.argmax(logits)` with `torch.distributions.Categorical(logits=logits).sample()` to match the training-time action selection mechanism.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table
