@@ -74,7 +74,7 @@ VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Vi
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
-MAX_STEPS = 2000             # Safety cap — agent should exit maze before this
+MAX_STEPS = 400              # Balanced for smooth interactive visual run without UI freeze (~12s)
 STEP_SIZE = 0.30             # Larger steps for visible movement
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
@@ -241,8 +241,12 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         grid_y = round(cube.location.y / 0.3) * 0.3
         positions_visited.add((grid_x, grid_y))
 
-        # Force Blender 3D Viewport refresh
+        # Force Blender 3D Viewport refresh WITH visible redraw
         bpy.context.view_layer.update()
+        if IN_BLENDER:
+            import time
+            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+            time.sleep(0.03)  # 30ms delay so user can see the cube moving
 
         # Print every 50 steps + first 5
         if s < 5 or s % 50 == 0 or s == steps - 1:

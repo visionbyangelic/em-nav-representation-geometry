@@ -133,6 +133,11 @@
 - **Why**: Without collision detection, the agent could walk through walls and escape the maze entirely (see Challenge 5). This is the 3D equivalent of MiniGrid's built-in grid collision engine.
 - **Metrics Added**: Forward step count, wall collision count, unique positions visited, and total displacement — providing quantitative navigation efficiency data for paper figures.
 
+### **Challenge 11: Blender UI Freezing During Extended Interactive Visual Loops**
+- **Problem**: Running a synchronous Python loop with large step counts (e.g., 2000–5000+ steps) using `time.sleep()` and `bpy.ops.wm.redraw_timer` on Blender's main thread blocks the operating system's window event pump. Windows flags Blender as "Not Responding" / frozen when the script runs for longer than a few seconds without yielding control back to Blender's main event loop.
+- **Root Cause**: Python scripts executed via Blender's Text Editor run synchronously on the main thread. While `redraw_timer` forces frame drawing, it does not process OS window events (mouse, keyboard, window focus), causing the OS window manager to assume the process is hung.
+- **Resolution**: Balance visual step counts (`MAX_STEPS` tuned to 300–500 steps for interactive testing) or transition long-running continuous animations to Blender's non-blocking timer system (`bpy.app.timers.register`) or keyframe playback for visual demonstrations.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table
