@@ -22,8 +22,21 @@ import glob
 import math
 import numpy as np
 
-# Ensure Anaconda paths are removed to prevent Python 3.13 typing_extensions conflicts
+# ── AGGRESSIVE ANACONDA PATH PURGE (Challenge 2 & 8) ──
+# Blender 5.1 embeds Python 3.13. Anaconda's typing_extensions conflicts with it.
+# Must clean sys.path, sys.modules, AND PYTHONPATH before importing torch.
 sys.path = [p for p in sys.path if "anaconda3" not in p.lower()]
+
+# Purge any already-cached Anaconda modules
+for mod_name in list(sys.modules.keys()):
+    mod = sys.modules[mod_name]
+    if hasattr(mod, "__file__") and mod.__file__ and "anaconda3" in mod.__file__.lower():
+        del sys.modules[mod_name]
+
+# Clean PYTHONPATH environment variable
+if "PYTHONPATH" in os.environ:
+    clean_paths = [p for p in os.environ["PYTHONPATH"].split(os.pathsep) if "anaconda3" not in p.lower()]
+    os.environ["PYTHONPATH"] = os.pathsep.join(clean_paths)
 
 # Guarantee parent workspace directory is on sys.path
 repo_root = r"c:\Users\nerdyalgorithm\Desktop\top project\em-nav-representation-geometry"
@@ -61,14 +74,14 @@ VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Vi
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
-MAX_STEPS = 50               # Number of 3D navigation steps (keep low to avoid UI freeze)
-STEP_SIZE = 0.50             # 3D step size matched to 3x-scaled corridor width
+MAX_STEPS = 200              # More steps for meaningful corridor navigation
+STEP_SIZE = 0.15             # Small steps for narrow 3x-scaled corridors
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
-# STARTING LINE COORDINATES (inside 3x-scaled maze corridor)
-START_X = 3.141
-START_Y = 3.5565
-START_Z = 0.300
+# STARTING LINE COORDINATES (inside walled corridor — confirmed via Blender screenshot)
+START_X = -0.891
+START_Y = -0.697
+START_Z = 0.101
 
 
 # ========================================================================================================
