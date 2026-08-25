@@ -128,6 +128,11 @@
 - **Root Cause**: During PPO training, actions were **sampled** from a `Categorical(logits=...)` distribution, not taken greedily. The model learned a stochastic policy that relies on probabilistic sampling to explore. Argmax removes this stochasticity entirely.
 - **Resolution**: Replaced `torch.argmax(logits)` with `torch.distributions.Categorical(logits=logits).sample()` to match the training-time action selection mechanism.
 
+### **Feature: Wall Collision Detection System**
+- **What**: Added `check_wall_collision()` function that casts a forward ray before each step. If a wall is detected within `STEP_SIZE + 0.15m` safety margin, the forward move is blocked — matching MiniGrid's discrete collision behavior where walking into a wall simply fails silently.
+- **Why**: Without collision detection, the agent could walk through walls and escape the maze entirely (see Challenge 5). This is the 3D equivalent of MiniGrid's built-in grid collision engine.
+- **Metrics Added**: Forward step count, wall collision count, unique positions visited, and total displacement — providing quantitative navigation efficiency data for paper figures.
+
 ---
 
 ## 4. Full 24-Model Quantitative Results Table

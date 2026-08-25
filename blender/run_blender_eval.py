@@ -114,6 +114,31 @@ def cast_5_rays_in_blender(cube_obj, maze_obj, max_range=8.0):
     return np.array(distances, dtype=np.float32)
 
 
+def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.15):
+    """
+    Casts a single ray in the forward heading direction to check if a wall
+    blocks the proposed step. Returns True if the path is BLOCKED.
+    """
+    if not IN_BLENDER:
+        return False
+
+    scene = bpy.context.scene
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+
+    origin = cube_obj.location + mathutils.Vector((0, 0, 0.2))
+    direction = mathutils.Vector((math.cos(heading_rad), math.sin(heading_rad), 0.0)).normalized()
+
+    hit, location, normal, index, hit_obj, matrix = scene.ray_cast(
+        depsgraph, origin, direction, distance=step_size + safety_margin
+    )
+
+    if hit:
+        wall_dist = (location - origin).length
+        return wall_dist < (step_size + safety_margin)
+
+    return False
+
+
 # ========================================================================================================
 # 2. SINGLE-MODEL VISUAL NAVIGATION CONTROLLER
 # ========================================================================================================
@@ -153,6 +178,9 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
 
     h_state = None
     turn_rad = math.radians(TURN_ANGLE_DEG)  # 90° turn
+    wall_collisions = 0
+    forward_steps = 0
+    positions_visited = set()
 
     for s in range(steps):
         obs = cast_5_rays_in_blender(cube, maze)
@@ -162,21 +190,33 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
             h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
 
         # Sample action from policy distribution (matching PPO training, NOT greedy argmax)
-        dist = torch.distributions.Categorical(logits=logits)
-        action = dist.sample().item()
+        policy_dist = torch.distributions.Categorical(logits=logits)
+        action = policy_dist.sample().item()
         logits_np = logits.squeeze().numpy()
         if agent_type == "C":
             h_state = h_next
 
-        # Execute 3D physical movement (90° turns + 0.50m steps matched to 3x corridor width)
+        # Execute 3D physical movement with WALL COLLISION DETECTION
+        blocked = False
         if action == 0:    # Turn Left (+90° counter-clockwise)
             cube.rotation_euler.z += turn_rad
         elif action == 1:  # Turn Right (-90° clockwise)
             cube.rotation_euler.z -= turn_rad
         elif action == 2 or action == 3:  # Move Forward
             heading = cube.rotation_euler.z + (math.pi / 2.0)
-            cube.location.x += STEP_SIZE * math.cos(heading)
-            cube.location.y += STEP_SIZE * math.sin(heading)
+            if check_wall_collision(cube, heading, STEP_SIZE):
+                # Wall ahead — block the move (same as MiniGrid collision behavior)
+                blocked = True
+                wall_collisions += 1
+            else:
+                cube.location.x += STEP_SIZE * math.cos(heading)
+                cube.location.y += STEP_SIZE * math.sin(heading)
+                forward_steps += 1
+
+        # Track unique grid positions (rounded to 0.5m cells)
+        grid_x = round(cube.location.x * 2) / 2
+        grid_y = round(cube.location.y * 2) / 2
+        positions_visited.add((grid_x, grid_y))
 
         # Force Blender 3D Viewport refresh
         bpy.context.view_layer.update()
@@ -184,9 +224,18 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         # Print EVERY step for first 10, then every 25 after that
         if s < 10 or s % 25 == 0 or s == steps - 1:
             action_names = {0: "TURN_L", 1: "TURN_R", 2: "FWD", 3: "FWD"}
-            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}) | Rays: {np.round(obs, 2)} | Logits: {np.round(logits_np, 3)}")
+            status = " 🧱BLOCKED" if blocked else ""
+            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}{status}) | Rays: {np.round(obs, 2)} | Logits: {np.round(logits_np, 3)}")
 
-    print(f"✅ Visual Demo Complete for {ckpt_name}!\n")
+    # Print navigation summary stats
+    start_pos = np.array([START_X, START_Y])
+    final_pos = np.array([cube.location.x, cube.location.y])
+    total_displacement = np.linalg.norm(final_pos - start_pos)
+
+    print(f"\n📊 Navigation Summary for {ckpt_name}:")
+    print(f"   Forward Steps: {forward_steps} | Wall Collisions: {wall_collisions} | Unique Positions: {len(positions_visited)}")
+    print(f"   Start: ({START_X:.2f}, {START_Y:.2f}) → End: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Displacement: {total_displacement:.2f}m")
+    print(f"✅ Visual Demo Complete!\n")
 
 
 # ========================================================================================================
