@@ -74,8 +74,8 @@ VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Vi
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
-MAX_STEPS = 200              # More steps for meaningful corridor navigation
-STEP_SIZE = 0.15             # Small steps for narrow 3x-scaled corridors
+MAX_STEPS = 2000             # Safety cap — agent should exit maze before this
+STEP_SIZE = 0.30             # Larger steps for visible movement
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
 # STARTING LINE COORDINATES (inside walled corridor — confirmed via Blender screenshot)
@@ -127,7 +127,7 @@ def cast_5_rays_in_blender(cube_obj, maze_obj, max_range=8.0):
     return np.array(distances, dtype=np.float32)
 
 
-def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.15):
+def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.10):
     """
     Casts a single ray in the forward heading direction to check if a wall
     blocks the proposed step. Returns True if the path is BLOCKED.
@@ -156,7 +156,7 @@ def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.15):
 # 2. SINGLE-MODEL VISUAL NAVIGATION CONTROLLER
 # ========================================================================================================
 def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
-    """Drives the pink Cube live inside the Blender 3D Viewport."""
+    """Drives the pink Cube live inside the Blender 3D Viewport until it exits the maze."""
     if not IN_BLENDER:
         return
 
@@ -168,7 +168,6 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         return
 
     # CRITICAL: Clear any previously baked keyframe animations from the Cube
-    # (bake_keyframes.py saved hardcoded animation data into the .blend file)
     cube.animation_data_clear()
 
     ckpt_path = os.path.join(repo_root, "checkpoints", ckpt_name)
@@ -187,17 +186,29 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
     cube.location = mathutils.Vector((START_X, START_Y, START_Z))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
-    print(f"\n🚀 Running Visual Demo: {ckpt_name} at pos ({START_X}, {START_Y})")
+    print(f"\n🚀 Running Visual Demo: {ckpt_name} at pos ({START_X}, {START_Y}) — runs until maze exit!")
 
     h_state = None
-    turn_rad = math.radians(TURN_ANGLE_DEG)  # 90° turn
+    turn_rad = math.radians(TURN_ANGLE_DEG)
     wall_collisions = 0
     forward_steps = 0
     positions_visited = set()
+    open_space_streak = 0  # Count consecutive steps with all rays = 1.0 (no walls)
+    exited_maze = False
 
     for s in range(steps):
         obs = cast_5_rays_in_blender(cube, maze)
         obs_t = torch.FloatTensor(obs).unsqueeze(0)
+
+        # Detect maze exit: all 5 rays read 1.0 (max range) for 5 consecutive steps
+        if all(d > 0.95 for d in obs):
+            open_space_streak += 1
+            if open_space_streak >= 5:
+                exited_maze = True
+                print(f"  Step {s:3d} | 🚪 MAZE EXIT DETECTED! All rays clear for 5 consecutive steps.")
+                break
+        else:
+            open_space_streak = 0
 
         with torch.no_grad():
             h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
@@ -218,7 +229,6 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         elif action == 2 or action == 3:  # Move Forward
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             if check_wall_collision(cube, heading, STEP_SIZE):
-                # Wall ahead — block the move (same as MiniGrid collision behavior)
                 blocked = True
                 wall_collisions += 1
             else:
@@ -226,28 +236,30 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
                 cube.location.y += STEP_SIZE * math.sin(heading)
                 forward_steps += 1
 
-        # Track unique grid positions (rounded to 0.5m cells)
-        grid_x = round(cube.location.x * 2) / 2
-        grid_y = round(cube.location.y * 2) / 2
+        # Track unique grid positions (rounded to 0.3m cells)
+        grid_x = round(cube.location.x / 0.3) * 0.3
+        grid_y = round(cube.location.y / 0.3) * 0.3
         positions_visited.add((grid_x, grid_y))
 
         # Force Blender 3D Viewport refresh
         bpy.context.view_layer.update()
 
-        # Print EVERY step for first 10, then every 25 after that
-        if s < 10 or s % 25 == 0 or s == steps - 1:
+        # Print every 50 steps + first 5
+        if s < 5 or s % 50 == 0 or s == steps - 1:
             action_names = {0: "TURN_L", 1: "TURN_R", 2: "FWD", 3: "FWD"}
             status = " 🧱BLOCKED" if blocked else ""
-            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}{status}) | Rays: {np.round(obs, 2)} | Logits: {np.round(logits_np, 3)}")
+            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}{status}) | Rays: {np.round(obs, 2)}")
 
     # Print navigation summary stats
     start_pos = np.array([START_X, START_Y])
     final_pos = np.array([cube.location.x, cube.location.y])
     total_displacement = np.linalg.norm(final_pos - start_pos)
+    total_steps = s + 1
 
     print(f"\n📊 Navigation Summary for {ckpt_name}:")
-    print(f"   Forward Steps: {forward_steps} | Wall Collisions: {wall_collisions} | Unique Positions: {len(positions_visited)}")
+    print(f"   Total Steps: {total_steps} | Forward: {forward_steps} | Wall Collisions: {wall_collisions} | Unique Positions: {len(positions_visited)}")
     print(f"   Start: ({START_X:.2f}, {START_Y:.2f}) → End: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Displacement: {total_displacement:.2f}m")
+    print(f"   {'🚪 EXITED MAZE!' if exited_maze else '⏱️ Reached step limit (did not exit)'}")
     print(f"✅ Visual Demo Complete!\n")
 
 
