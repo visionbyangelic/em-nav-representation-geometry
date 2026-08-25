@@ -19,8 +19,8 @@
 | 3 | Skaggs Spatial Information Index & Place Cell Tuning | ✅ Complete |
 | 4 | Single-Unit Spatial Firing Rate Heatmaps | ✅ Complete |
 | 5 | Pre-Registration Decision Gate (Welch's $t$-test) | ✅ Complete |
-| 6 | 3D Blender Zero-Shot Continuous Transfer | 🚧 **In Progress** |
-| 7 | Paper Writing & Final Figures | ❌ Not Started |
+| 6 | 3D Blender Zero-Shot Continuous Transfer & Multi-Agent Benchmark | ✅ Complete |
+| 7 | Scientific Publication Figures & Research Paper Draft | ⏳ **In Progress** |
 
 ---
 
