@@ -3,24 +3,22 @@
 > **Project Title:** EM-NAV: Investigating the Role of Sparsity, Spiking Dynamics, and Recurrence in the Geometry and Transferability of Spatial Representations  
 > **Author:** Angelic Charles  
 > **Repository:** [visionbyangelic/em-nav-representation-geometry](https://github.com/visionbyangelic/em-nav-representation-geometry)  
-> **Status:** 🚧 **WORK IN PROGRESS** — Phase 6 (3D Blender Transfer) is under active development.
+> **Status:** 🏆 **COMPLETE** — All 8 phases (0–7), 3D continuous transfer benchmarks, publication figures, video recordings, and academic paper drafted.
 
 ---
 
-## ⚠️ PROJECT STATUS
-
-> **This project is NOT complete.** The core training pipeline and representation analysis (Phases 0–5) are finished. Phase 6 — deploying the trained agents into a real 3D Blender maze for zero-shot continuous transfer evaluation — is actively being developed and debugged. See `track.md` Section 3 for the full engineering troubleshooting log (Challenges 1–10 and counting).
+## 🚀 PROJECT STATUS
 
 | Phase | Description | Status |
-| :---: | :--- | :---: |
+| :--- | :--- | :---: |
 | 0 | Environment Scan & Perceptual Aliasing Baseline | ✅ Complete |
 | 1 | Architecture Construction & PPO Training (24 models) | ✅ Complete |
 | 2 | Linear Probing & Tri-RSA Representation Diagnostics | ✅ Complete |
 | 3 | Skaggs Spatial Information Index & Place Cell Tuning | ✅ Complete |
 | 4 | Single-Unit Spatial Firing Rate Heatmaps | ✅ Complete |
-| 5 | Pre-Registration Decision Gate (Welch's $t$-test) | ✅ Complete |
+| 5 | Pre-Registration Decision Gate (Welch's $t$-test: $p=0.00067$) | ✅ Complete |
 | 6 | 3D Blender Zero-Shot Continuous Transfer & Multi-Agent Benchmark | ✅ Complete |
-| 7 | Scientific Publication Figures & Research Paper Draft | ⏳ **In Progress** |
+| 7 | Scientific Publication Figures, Navigation Video & Manuscript | ✅ Complete |
 
 ---
 
@@ -72,22 +70,29 @@ We wanted to answer a fundamental question:
 
 ---
 
-## 4. 3D BLENDER CONTINUOUS EVALUATION (PHASE 6 — IN PROGRESS 🚧)
+## 4. 3D BLENDER CONTINUOUS EVALUATION (PHASE 6 🏆)
 
 ### **Goal**:
 Deploy the frozen trained model weights into a real 3D Blender maze environment to evaluate zero-shot continuous transfer — can an agent trained in a discrete 2D grid navigate a continuous 3D world?
 
-### **Current Status**:
-- ✅ 3D maze scene built in Blender (`blender/em-nav Maze.blend`)
-- ✅ PyTorch + snntorch installed inside Blender's embedded Python
-- ✅ Native 3D raycasting engine operational (`blender/run_blender_eval.py`)
-- ✅ Agent D confirmed moving through 3D corridors with stochastic policy sampling
-- 🚧 Tuning step size, start position, and collision handling for reliable navigation
-- ❌ Final trajectory recording and figure generation not started
-- ❌ Comparative evaluation of all 4 agent types in 3D not started
+### **Final Results & Discoveries**:
+- ✅ **Agent D (RSNN + Sparsity)** explored **216 unique spatial locations** (>4× the coverage of MLP) and discovered the maze exit in 2,938 steps ($5.66\text{m}$ displacement).
+- ✅ **Agent B (FF-SNN)** escaped in 399 steps with high momentum ($7.16\text{m}$ displacement).
+- ❌ **Agent A (MLP)** suffered sensorimotor collapse, exploring only 50 locations before getting trapped in a corner loop (>3000 steps).
+- ❌ **Agent C (RNN)** explored 134 locations but timed out without finding the exit ($1.61\text{m}$ displacement).
+- 🎬 **Video Demonstration**: Full continuous session video recorded and archived in `figures/`.
 
-### **Engineering Challenges Encountered So Far** (see `track.md` Section 3 for full details):
-10 engineering challenges documented and resolved, including: ray sensor calibration, Python DLL path conflicts, action granularity mismatches ($90°$ vs $15°$ turns), step size vs corridor width scaling, baked keyframe animation conflicts, Blender UI freezing, and greedy argmax vs stochastic PPO sampling.
+---
+
+## 5. PUBLICATION FIGURES & MANUSCRIPT (PHASE 7 🏆)
+
+All 6 publication figures generated directly from the 24 trained checkpoints ($N=24$ runs, 3 random seeds):
+- **Figure 1**: Tri-RSA Representational Geometry (RDM correlation with Geodesic, Euclidean, and Sensorimotor matrices)
+- **Figure 2**: Skaggs Spatial Information Index Distribution & $t$-test confirmation ($p = 0.00067$)
+- **Figure 3**: Emergent Place Cell Spatial Firing Rate Heatmaps ($12 \times 12$ grid)
+- **Figure 4**: Zero-Shot 3D Continuous Transfer Benchmark & Trajectories
+- **Figure 5**: Complete 32-Neuron Place Field Atlas for Agent D
+- **Figure 7**: Task 1 (Blind Search) vs. Task 2 (Curiosity Exploration) Dynamics
 
 ---
 
@@ -96,7 +101,12 @@ Deploy the frozen trained model weights into a real 3D Blender maze environment 
 | File Name | Purpose in Plain English |
 | :--- | :--- |
 | **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and current status (this file). |
+| **`README.md`** | Primary research repository documentation with visual figure gallery, benchmarks, and video links. |
 | **`track.md`** | Comprehensive scientific progress log, engineering troubleshooting log, and full 24-model empirical evaluation tables. |
+| **`Docs/RESEARCH_PAPER.md`** | Complete academic manuscript draft ready for scientific preprint / submission. |
+| **`figures/`** | Publication figure assets (Figures 1, 2, 3, 4, 5, 7) and 3D continuous navigation video. |
+| **`generate_publication_figures.py`** | Publication figure generator for Figures 1, 2, 3, 4. |
+| **`generate_advanced_analyses.py`** | Empirical generator for Figure 5 (32-Neuron Atlas) and Figure 7 (Cross-Task). |
 | **`models.py`** | PyTorch & snnTorch neural network definitions for Agents A, B, C, and D ($H=32$). |
 | **`train.py`** | Main PPO reinforcement learning training engine with detached value head safeguards. |
 | **`kaggle_train_all.py`** | Self-contained, standalone Kaggle GPU training launcher for 100% scientific reproducibility. |
@@ -105,7 +115,7 @@ Deploy the frozen trained model weights into a real 3D Blender maze environment 
 | **`evaluate_decision_gate.py`** | Phase 5 pre-registration decision gate with Welch's $t$-test statistical verification. |
 | **`stage_zero_scan.py`** | Pre-registration environment scan quantifying baseline perceptual aliasing density (81.52%). |
 | **`blender/run_blender_eval.py`** | 3D Blender live evaluation script — drives the agent through the maze using native raycasting. |
-| **`blender/continuous_eval.py`** | Continuous transfer engine computing Representational Drift Index (RDI). |
-| **`blender/bake_keyframes.py`** | Keyframe animation baker for Blender playback (experimental). |
+| **`blender/run_comparative_eval.py`** | Headless comparative 4-agent benchmarking suite in 3D. |
 | **`blender/em-nav Maze.blend`** | The 3D Blender maze scene file with agent cube and maze geometry. |
 | **`checkpoints/`** | Directory containing all 24 trained model weight files (`.pt`). |
+
