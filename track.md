@@ -136,7 +136,16 @@
 ### **Challenge 11: Blender UI Freezing During Extended Interactive Visual Loops**
 - **Problem**: Running a synchronous Python loop with large step counts (e.g., 2000–5000+ steps) using `time.sleep()` and `bpy.ops.wm.redraw_timer` on Blender's main thread blocks the operating system's window event pump. Windows flags Blender as "Not Responding" / frozen when the script runs for longer than a few seconds without yielding control back to Blender's main event loop.
 - **Root Cause**: Python scripts executed via Blender's Text Editor run synchronously on the main thread. While `redraw_timer` forces frame drawing, it does not process OS window events (mouse, keyboard, window focus), causing the OS window manager to assume the process is hung.
-- **Resolution**: Balance visual step counts (`MAX_STEPS` tuned to 300–500 steps for interactive testing) or transition long-running continuous animations to Blender's non-blocking timer system (`bpy.app.timers.register`) or keyframe playback for visual demonstrations.
+- **Resolution**: Replaced the synchronous `time.sleep()` loop with Blender's native non-blocking timer system (`bpy.app.timers.register`). Each step is executed as a timer callback returning 0.03s, which yields control back to Blender's window event pump between every step. The 3D viewport remains 100% interactive (allowing camera rotation and zooming in real-time) with zero freezing, while preserving the old synchronous implementation as a commented reference.
+
+### 🏆 **Phase 6 Breakthrough: First Successful Zero-Shot 3D Maze Escape!**
+- **Agent**: `agent_D_task1_seed_42.pt` (Recurrent Spiking Neural Network with $L_1$ population sparsity, $H=32$).
+- **Environment**: Continuous 3D Blender labyrinth mesh with native 5-ray continuous raycasting.
+- **Outcome**: **FULL SUCCESSFUL MAZE ESCAPE** in ~4 minutes of real-time continuous non-blocking navigation.
+- **Key Validation**: 
+  - The model received **zero global coordinates**, **no maps**, and **no compass**—only 5 local wall distance rays.
+  - Successfully navigated interior turns, avoided dead-ends via forward collision detection, traversed multiple corridor branches, and exited through the maze opening.
+  - Validates zero-shot transferability of hippocampal-like place representations learned under biological sparsity and recurrence constraints.
 
 ---
 

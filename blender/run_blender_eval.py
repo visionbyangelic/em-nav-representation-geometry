@@ -74,7 +74,7 @@ VISUAL_MODE = True           # Set to True to watch pink Cube move live in 3D Vi
 SELECTED_CHECKPOINT = "agent_D_task1_seed_42.pt"  # Model used for Visual Mode
 
 BATCH_MODE = False           # Set to True to evaluate all 24 checkpoints (SLOW - freezes UI)
-MAX_STEPS = 400              # Balanced for smooth interactive visual run without UI freeze (~12s)
+MAX_STEPS = 3000             # Max steps (3000 steps) — stops if agent hasn't exited
 STEP_SIZE = 0.30             # Larger steps for visible movement
 TURN_ANGLE_DEG = 90          # Rotation angle (90° matching MiniGrid discrete turn action)
 
@@ -153,10 +153,92 @@ def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.10):
 
 
 # ========================================================================================================
-# 2. SINGLE-MODEL VISUAL NAVIGATION CONTROLLER
+# 2A. OLD SYNCHRONOUS VISUAL CONTROLLER (PRESERVED FOR REFERENCE)
+# WHY THIS HANGS / FREEZES:
+# Running a synchronous Python for-loop with time.sleep() on Blender's main UI thread completely
+# blocks the Windows event pump. Because Windows receives no window heartbeat events for >5s,
+# it marks Blender as "Not Responding" (app hang).
+# ========================================================================================================
+# def run_visual_demo_old(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
+#     """Drives the pink Cube live inside the Blender 3D Viewport until it exits the maze."""
+#     if not IN_BLENDER:
+#         return
+# 
+#     cube = bpy.data.objects.get("Cube")
+#     maze = bpy.data.objects.get("Maze")
+#     if not cube or not maze:
+#         print("❌ Error: Could not find 'Cube' or 'Maze' in Scene Collection.")
+#         return
+# 
+#     cube.animation_data_clear()
+#     ckpt_path = os.path.join(repo_root, "checkpoints", ckpt_name)
+#     if not os.path.exists(ckpt_path):
+#         print(f"❌ Error: Checkpoint file not found: {ckpt_path}")
+#         return
+# 
+#     agent_type = ckpt_name.split("_")[1]
+#     agent_map = {"A": AgentA_MLP, "B": AgentB_FFSNN, "C": AgentC_RNN, "D": AgentD_RSNN}
+#     actor = agent_map[agent_type]()
+#     actor.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
+#     actor.eval()
+# 
+#     cube.location = mathutils.Vector((START_X, START_Y, START_Z))
+#     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
+# 
+#     h_state = None
+#     turn_rad = math.radians(TURN_ANGLE_DEG)
+#     wall_collisions = 0
+#     forward_steps = 0
+#     positions_visited = set()
+#     open_space_streak = 0
+#     exited_maze = False
+# 
+#     for s in range(steps):
+#         obs = cast_5_rays_in_blender(cube, maze)
+#         obs_t = torch.FloatTensor(obs).unsqueeze(0)
+# 
+#         if all(d > 0.95 for d in obs):
+#             open_space_streak += 1
+#             if open_space_streak >= 5:
+#                 exited_maze = True
+#                 break
+#         else:
+#             open_space_streak = 0
+# 
+#         with torch.no_grad():
+#             h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
+# 
+#         policy_dist = torch.distributions.Categorical(logits=logits)
+#         action = policy_dist.sample().item()
+#         if agent_type == "C":
+#             h_state = h_next
+# 
+#         if action == 0:
+#             cube.rotation_euler.z += turn_rad
+#         elif action == 1:
+#             cube.rotation_euler.z -= turn_rad
+#         elif action == 2 or action == 3:
+#             heading = cube.rotation_euler.z + (math.pi / 2.0)
+#             if check_wall_collision(cube, heading, STEP_SIZE):
+#                 wall_collisions += 1
+#             else:
+#                 cube.location.x += STEP_SIZE * math.cos(heading)
+#                 cube.location.y += STEP_SIZE * math.sin(heading)
+#                 forward_steps += 1
+# 
+#         bpy.context.view_layer.update()
+#         import time
+#         bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+#         time.sleep(0.03)
+
+
+# ========================================================================================================
+# 2B. NON-BLOCKING TIMER VISUAL NAVIGATION CONTROLLER (NEW — NEVER FREEZES)
+# Uses Blender's native bpy.app.timers to run 1 step every 0.03s, yielding control back to Blender
+# between steps so the UI remains 100% interactive (camera rotation, zooming, no Windows freezing).
 # ========================================================================================================
 def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
-    """Drives the pink Cube live inside the Blender 3D Viewport until it exits the maze."""
+    """Drives the pink Cube smoothly using Blender's non-blocking native timer system."""
     if not IN_BLENDER:
         return
 
@@ -186,85 +268,95 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
     cube.location = mathutils.Vector((START_X, START_Y, START_Z))
     cube.rotation_euler = mathutils.Vector((0.0, 0.0, 0.0))
 
-    print(f"\n🚀 Running Visual Demo: {ckpt_name} at pos ({START_X}, {START_Y}) — runs until maze exit!")
+    print(f"\n🚀 Running Non-Blocking Visual Demo: {ckpt_name} at pos ({START_X}, {START_Y})")
+    print(f"💡 Info: The 3D Viewport remains 100% interactive! You can rotate the camera while it navigates.\n")
 
-    h_state = None
-    turn_rad = math.radians(TURN_ANGLE_DEG)
-    wall_collisions = 0
-    forward_steps = 0
-    positions_visited = set()
-    open_space_streak = 0  # Count consecutive steps with all rays = 1.0 (no walls)
-    exited_maze = False
+    # State container for timer execution
+    state = {
+        "step": 0,
+        "h_state": None,
+        "turn_rad": math.radians(TURN_ANGLE_DEG),
+        "wall_collisions": 0,
+        "forward_steps": 0,
+        "positions_visited": set(),
+        "open_space_streak": 0,
+        "exited_maze": False,
+        "max_steps": steps
+    }
 
-    for s in range(steps):
+    def timer_step():
+        s = state["step"]
+
+        # Check if step limit reached
+        if s >= state["max_steps"]:
+            finish_navigation()
+            return None  # Unregisters timer
+
         obs = cast_5_rays_in_blender(cube, maze)
         obs_t = torch.FloatTensor(obs).unsqueeze(0)
 
-        # Detect maze exit: all 5 rays read 1.0 (max range) for 5 consecutive steps
+        # Detect maze exit: all 5 rays read 1.0 for 5 consecutive steps
         if all(d > 0.95 for d in obs):
-            open_space_streak += 1
-            if open_space_streak >= 5:
-                exited_maze = True
+            state["open_space_streak"] += 1
+            if state["open_space_streak"] >= 5:
+                state["exited_maze"] = True
                 print(f"  Step {s:3d} | 🚪 MAZE EXIT DETECTED! All rays clear for 5 consecutive steps.")
-                break
+                finish_navigation()
+                return None  # Unregisters timer
         else:
-            open_space_streak = 0
+            state["open_space_streak"] = 0
 
         with torch.no_grad():
-            h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, h_state)
+            h_rep, logits, h_next = actor_forward_standalone(actor, agent_type, obs_t, state["h_state"])
 
-        # Sample action from policy distribution (matching PPO training, NOT greedy argmax)
         policy_dist = torch.distributions.Categorical(logits=logits)
         action = policy_dist.sample().item()
-        logits_np = logits.squeeze().numpy()
         if agent_type == "C":
-            h_state = h_next
+            state["h_state"] = h_next
 
         # Execute 3D physical movement with WALL COLLISION DETECTION
         blocked = False
         if action == 0:    # Turn Left (+90° counter-clockwise)
-            cube.rotation_euler.z += turn_rad
+            cube.rotation_euler.z += state["turn_rad"]
         elif action == 1:  # Turn Right (-90° clockwise)
-            cube.rotation_euler.z -= turn_rad
+            cube.rotation_euler.z -= state["turn_rad"]
         elif action == 2 or action == 3:  # Move Forward
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             if check_wall_collision(cube, heading, STEP_SIZE):
                 blocked = True
-                wall_collisions += 1
+                state["wall_collisions"] += 1
             else:
                 cube.location.x += STEP_SIZE * math.cos(heading)
                 cube.location.y += STEP_SIZE * math.sin(heading)
-                forward_steps += 1
+                state["forward_steps"] += 1
 
-        # Track unique grid positions (rounded to 0.3m cells)
+        # Track unique positions
         grid_x = round(cube.location.x / 0.3) * 0.3
         grid_y = round(cube.location.y / 0.3) * 0.3
-        positions_visited.add((grid_x, grid_y))
+        state["positions_visited"].add((grid_x, grid_y))
 
-        # Force Blender 3D Viewport refresh WITH visible redraw
-        bpy.context.view_layer.update()
-        if IN_BLENDER:
-            import time
-            bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-            time.sleep(0.03)  # 30ms delay so user can see the cube moving
-
-        # Print every 50 steps + first 5
-        if s < 5 or s % 50 == 0 or s == steps - 1:
+        # Print periodically
+        if s < 5 or s % 50 == 0:
             action_names = {0: "TURN_L", 1: "TURN_R", 2: "FWD", 3: "FWD"}
             status = " 🧱BLOCKED" if blocked else ""
-            print(f"  Step {s:3d}/{steps} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}{status}) | Rays: {np.round(obs, 2)}")
+            print(f"  Step {s:3d}/{state['max_steps']} | Pos: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Action: {action} ({action_names.get(action, '?')}{status}) | Rays: {np.round(obs, 2)}")
 
-    # Print navigation summary stats
-    start_pos = np.array([START_X, START_Y])
-    final_pos = np.array([cube.location.x, cube.location.y])
-    total_displacement = np.linalg.norm(final_pos - start_pos)
-    total_steps = s + 1
+        state["step"] += 1
+        return 0.03  # Schedule next step in 30ms (yielding to Blender UI)
 
-    print(f"\n📊 Navigation Summary for {ckpt_name}:")
-    print(f"   Total Steps: {total_steps} | Forward: {forward_steps} | Wall Collisions: {wall_collisions} | Unique Positions: {len(positions_visited)}")
-    print(f"   Start: ({START_X:.2f}, {START_Y:.2f}) → End: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Displacement: {total_displacement:.2f}m")
-    print(f"   {'🚪 EXITED MAZE!' if exited_maze else '⏱️ Reached step limit (did not exit)'}")
-    print(f"✅ Visual Demo Complete!\n")
+    def finish_navigation():
+        start_pos = np.array([START_X, START_Y])
+        final_pos = np.array([cube.location.x, cube.location.y])
+        total_displacement = np.linalg.norm(final_pos - start_pos)
+
+        print(f"\n📊 Navigation Summary for {ckpt_name}:")
+        print(f"   Total Steps: {state['step']} | Forward: {state['forward_steps']} | Wall Collisions: {state['wall_collisions']} | Unique Positions: {len(state['positions_visited'])}")
+        print(f"   Start: ({START_X:.2f}, {START_Y:.2f}) → End: ({cube.location.x:.2f}, {cube.location.y:.2f}) | Displacement: {total_displacement:.2f}m")
+        print(f"   {'🚪 EXITED MAZE!' if state['exited_maze'] else '⏱️ Reached step limit (did not exit)'}")
+        print(f"✅ Visual Demo Complete!\n")
+
+    # Register non-blocking step timer in Blender
+    bpy.app.timers.register(timer_step)
 
 
 # ========================================================================================================
