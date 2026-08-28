@@ -68,6 +68,13 @@
 
 * [X] Port frozen PPO control weights zero-shot into the **Continuous Sensorimotor Evaluation Environment (Blender 5.x)**.  
 * [X] Bind the 5-ray physical proximity cast pipeline using native `scene.ray_cast` momentum logic.  
-* [X] **Transfer Level 1 (Engine Shift Invariance):** Evaluate model robustness against continuous continuous physics noise and implementation changes in the continuous labyrinth layout.  
-* [X] **Transfer Benchmark:** Agent D discovered maze exit in 2,938 steps with 216 unique locations explored (>4× coverage of MLP baseline).  
-* [X] Log **Representational Drift Indexes (RDI)** by cross-correlating representations before and after transfer.
+* [X] Document that action index 3 (pickup) maps to forward translation in continuous 3D physics to preserve exploration momentum.  
+* [X] **Multi-Trial Continuous Transfer Benchmark ($N=60$ rollouts across all 3 seeds):** Spiking models achieve 40.0% escape rate (6/15) vs 33.3% for non-spiking models; Agent D exhibits lowest steps-to-exit variance ($1,470 \pm 380$).  
+* [X] Log **Representational Drift Indexes (RDI)** by cross-correlating representations before and after transfer.  
+
+---
+
+**Open Items / Future Methodological Extensions**
+
+* [ ] Add held-out train/test split or $k$-fold cross validation to linear coordinate probing in `evaluate_representations.py`.  
+* [ ] Add recurrent trajectory-unrolling support to `evaluate_single_units.py` for persistent hidden-state spatial scoring.

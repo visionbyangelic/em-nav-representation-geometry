@@ -165,7 +165,7 @@ Frozen model weights, trained entirely in the discrete 2D maze, were evaluated z
 
 ## 11. Status & Audit Log
 
-The empirical audits, integrity checks, and multi-trial benchmarks have been executed and synced:
+### ✅ Completed Empirical Verifications & Benchmarks:
 
 - [x] **Measure Agent D’s actual empirical mean population firing rate:** Verified at **$0.59\% \pm 0.05\%$** across all 6 checkpoints using [`verify_empirical_claims.py`](verify_empirical_claims.py).
 - [x] **Add an Agent D vs. Agent C significance test:** Integrated into [`evaluate_decision_gate.py`](evaluate_decision_gate.py) ($t=4.24, p=1.76 \times 10^{-3}$).
@@ -173,7 +173,13 @@ The empirical audits, integrity checks, and multi-trial benchmarks have been exe
 - [x] **Regenerate Figure 3 from genuine checkpoint activations:** Replaced synthetic Gaussians in [`generate_publication_figures.py`](generate_publication_figures.py) with real PyTorch checkpoint forward passes.
 - [x] **Verify and update Task 2 empirical numbers:** Updated [`generate_advanced_analyses.py`](generate_advanced_analyses.py) with measured Skaggs and $R^2$ values.
 - [x] **Multi-trial 3D Blender continuous benchmark:** Executed across **60 stochastic rollouts** (4 architectures $\times$ 3 seeds $\times$ 5 trials) via [`blender/run_multitrial_benchmark.py`](blender/run_multitrial_benchmark.py).
-- [ ] **Document the Blender action-mapping:** Documented that action index 3 (pickup, a no-op during MiniGrid training) triggers “move forward” in continuous physics scripts.
+- [x] **Document the Blender continuous action-mapping:** Documented across all Blender evaluation scripts that action index 3 (pickup, a no-op during MiniGrid training) is mapped to forward locomotion in continuous 3D physics to maintain exploration momentum.
+
+### 📋 Open Items / Future Methodological Extensions:
+
+- [ ] **Add a held-out train/test split or $k$-fold cross-validation to linear coordinate probing** in `evaluate_representations.py` (which currently fits and evaluates ridge regression on the same collected spatial points).
+- [ ] **Align recurrent hidden-state unrolling in single-unit spatial evaluation:** `evaluate_representations.py` supports trajectory unrolling (`unroll_trajectory`); add an analogous trajectory-unrolling option to `evaluate_single_units.py` so Skaggs Information can optionally be scored with persistent temporal history in addition to zero-history state snapshots.
+- [ ] **Maintain continuous synchronization of project tracking documents:** Keep `Docs/EM-NAV Project Tracking Log & To-Do List.md` and `track.md` aligned with this running checklist.
 
 -----
 

@@ -200,6 +200,10 @@ def run_single_rollout(actor, agent_type, cube, maze, eval_seed):
         elif action == 1:
             cube.rotation_euler.z -= turn_rad
         elif action == 2 or action == 3:
+            # Action Mapping Design Decision:
+            # Action 2 is MiniGrid 'Move Forward'. Action 3 is 'Pickup' (a no-op during 2D maze training).
+            # In continuous 3D physics, action 3 is intentionally mapped to forward translation to preserve
+            # forward locomotion momentum under stochastic policy exploration.
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             if check_wall_collision(cube, heading, STEP_SIZE):
                 wall_collisions += 1
