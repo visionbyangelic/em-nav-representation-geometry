@@ -200,7 +200,24 @@ To ensure complete scientific transparency, we explicitly document the four core
 
 -----
 
-## 13. Frequently Asked Questions
+## 13. Future Work
+
+This project answers its core question, but working through it surfaced several natural follow-up directions, listed here rather than left implicit:
+
+1. **Test generalization across multiple maze topologies:** All current results come from a single 12×12 layout with one central partition wall. It is not yet known whether sparsity-driven place-field formation is a general property of the training constraints or specific to this maze's geometry. Repeating the full pipeline on 2-3 structurally different mazes (different wall placement, branching factor, or size) would distinguish the two.
+2. **Ablate the sparsity coefficient ($\lambda_{\text{sparse}}$):** Agent D's L1 penalty is fixed at $1 \times 10^{-4}$ throughout. A sweep across several values would show whether the emergent 0.59% firing rate and the resulting spatial tuning are robust to this choice, or a coincidence of that one setting.
+3. **Increase seed count for pairwise significance tests:** Current results use 3 training seeds per architecture (24 checkpoints total). Extending to $N \ge 10$ seeds would tighten the confidence bounds on the Skaggs information comparisons, particularly the D-vs-C result, which is significant at $p < 0.01$ but not $p < 0.001$.
+4. **Strengthen the "place cell" claim with additional criteria beyond Skaggs information:** High spatial information per spike is necessary but not sufficient evidence for place-cell-like function. Adding tests for field stability across repeated trajectories and spatial autocorrelation structure would bring the claim closer to what is expected in the biological place-cell literature.
+5. **Train a genuinely continuous-action-space baseline:** Rather than relying only on zero-shot transfer of a discretely-trained policy into the continuous Blender environment, train a Gaussian-policy PPO variant directly in continuous space. This would separate "does the representation transfer" from "does training under continuous dynamics from the start produce a different representation entirely."
+6. **Extend the 3D transfer benchmark to morphological and topological generalization:** Testing frozen policies against corridors stretched $\pm 20\%$ from training dimensions, and against entirely novel, unseen maze layouts. The current benchmark tests transfer across physics engines (discrete grid to continuous physics) at matched geometry, not transfer across geometry itself.
+7. **Investigate the negative Task 2 (curiosity) linear-probing $R^2$ directly:** All four architectures decode global coordinates worse than chance under the pure-exploration reward, in contrast to Task 1's weak-but-positive decodability. Whether this reflects a genuine representational difference between goal-directed and curiosity-driven learning, or an artifact of the curiosity reward's dynamics, is an open question worth its own dedicated analysis.
+8. **Characterize the Agent D vs. Agent B tie in the 3D benchmark more closely:** Both architectures escape at an identical 40.0% rate, but this comparison is currently limited to aggregate success/failure. An error analysis of the specific failure trajectories in both agents' unsuccessful trials could clarify whether they fail for the same or different reasons, sharpening the "sparsity + recurrence adds consistency, not raw success" interpretation.
+9. **Benchmark against a pretrained foundation model as a separate study:** Comparing this from-scratch, capacity-matched approach against a large pretrained model's in-context spatial reasoning (via behavioral analysis only, since internal activations are not accessible) would address whether pretraining on internet-scale data confers implicit spatial competence, rather than whether biological constraints induce it during training.
+10. **Compare emergent statistics against real biological place-cell data:** The Skaggs information values and sparsity levels reported here could be directly benchmarked against published rodent hippocampal recordings, giving a concrete answer to how close this artificial system's statistics actually land relative to the biological system it is modeled on.
+
+-----
+
+## 14. Frequently Asked Questions
 
 **Q: Did you hand-code the place cells into the AI?**
 A: No. Each agent starts with randomly initialized weights. Any spatial tuning that emerges does so purely through reinforcement learning under the architectural constraints described above.
@@ -213,7 +230,7 @@ A: Standard artificial neurons output continuous decimal values. Spiking neurons
 
 -----
 
-## 14. Why This Matters
+## 15. Why This Matters
 
 1. **Neuromorphic edge robotics:** if sparse, event-driven, recurrent computation is what drives efficient spatial representation, that’s directly relevant to building navigation systems for small, low-power devices (drones, rovers, embedded robotics).
 2. **A testable computational account of a neuroscience hypothesis:** this project treats reinforcement learning as a controlled way to generate neural activity for analysis, similar to how a behavioral task is used to elicit and record activity in biological systems neuroscience, rather than as an engineering exercise aimed at maximizing reward.

@@ -111,6 +111,21 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 
 ---
 
+## 7. FUTURE WORK
+
+1. **Multiple Maze Topologies:** Evaluate sparsity-driven place-field emergence across 2-3 structurally distinct layouts (different wall placements, branching factors, and sizes).
+2. **Sparsity Coefficient Ablation:** Sweep $\lambda_{\text{sparse}}$ across multiple orders of magnitude to measure the sensitivity of the $0.59\%$ population firing rate.
+3. **Scaled Seed Distribution ($N \ge 10$):** Expand training seeds to tighten confidence bounds for $p$-value metrics across architectures.
+4. **Additional Biological Place-Field Metrics:** Incorporate cross-trial spatial field stability, directional modulation, and 2D spatial autocorrelation.
+5. **Continuous-Action Training Baselines:** Train Gaussian-policy PPO variants directly within continuous 3D coordinate space to separate representational transfer from continuous policy optimization.
+6. **Morphological & Topological 3D Generalization:** Benchmark zero-shot transfer against stretched corridor geometries and entirely novel 3D labyrinth layouts.
+7. **Curiosity Representation Dynamics:** Investigate the negative linear probing $R^2$ under curiosity exploration rewards.
+8. **Failure Mode Error Analysis:** Perform detailed trajectory error analyses on unsuccessful trials to characterize the behavioral failure modes of Agents B and D.
+9. **Pretrained Foundation Model Comparison:** Compare capacity-matched neuromorphic models with in-context spatial reasoning in large pretrained architectures.
+10. **Direct Biological Benchmarking:** Compare artificial spatial tuning statistics directly against published rodent hippocampal in-vivo electrophysiology datasets.
+
+---
+
 ## 🛠️ Repository File Guide
 
 | File Name | Purpose in Plain English |
