@@ -207,10 +207,10 @@ A: Standard artificial neurons output continuous decimal values. Spiking neurons
 
 -----
 
-## 13. Why This Matters
+## 14. Why This Matters
 
 1. **Neuromorphic edge robotics:** if sparse, event-driven, recurrent computation is what drives efficient spatial representation, that’s directly relevant to building navigation systems for small, low-power devices (drones, rovers, embedded robotics).
-1. **A testable computational account of a neuroscience hypothesis:** this project treats reinforcement learning as a controlled way to generate neural activity for analysis, similar to how a behavioral task is used to elicit and record activity in biological systems neuroscience, rather than as an engineering exercise aimed at maximizing reward.
+2. **A testable computational account of a neuroscience hypothesis:** this project treats reinforcement learning as a controlled way to generate neural activity for analysis, similar to how a behavioral task is used to elicit and record activity in biological systems neuroscience, rather than as an engineering exercise aimed at maximizing reward.
 
 -----
 
@@ -239,27 +239,30 @@ python evaluate_decision_gate.py
 ## Repository File Map
 
 ```text
-├── Docs/                             # Research manuscript drafts, proposal, and logs
-│   ├── RESEARCH_PAPER.md             # Manuscript draft — pending the fixes listed in Section 11
+├── Docs/                             # Research proposal and project logs
 │   ├── EM-NAV_Research_Proposal.md   # Initial pre-registration proposal
 │   └── EM-NAV Project Tracking Log & To-Do List.md
 ├── blender/                          # Continuous 3D sensorimotor evaluation suite
 │   ├── em-nav Maze.blend             # 3D continuous labyrinth environment
 │   ├── run_blender_eval.py           # Interactive Blender real-time single-agent evaluation
-│   └── run_comparative_eval.py       # Headless 4-agent continuous benchmarking suite
+│   ├── run_comparative_eval.py       # Headless 4-agent continuous benchmarking suite
+│   ├── run_multitrial_benchmark.py   # 60-rollout multi-trial continuous evaluation suite
+│   └── bake_keyframes.py             # 3D trajectory calculation & native keyframe baker
 ├── checkpoints/                      # 24 trained PyTorch / snnTorch models (.pt)
+├── figures/                          # Publication figure assets & 3D renders
 ├── wrappers/                         # Custom Gymnasium egocentric raycast wrapper
-├── evaluate_representations.py       # Linear probing (R²) and Tri-RSA (Kendall's τ) engine
-├── evaluate_single_units.py          # Skaggs spatial information & shuffle-control engine
-├── evaluate_decision_gate.py         # Pre-registration decision gate (Welch's t-test)
-├── generate_publication_figures.py   # Figure generator — pending real-data rework
-├── generate_advanced_analyses.py     # Atlas & cross-task figure generator
-├── kaggle_train_all.py               # Standalone Kaggle GPU training launcher
+├── evaluate_representations.py       # 5-fold cross-validated linear probing & Tri-RSA engine
+├── evaluate_single_units.py          # Skaggs spatial info & 200-shuffle significance engine
+├── evaluate_decision_gate.py         # Decision gate & Welch's t-test verification engine
+├── generate_publication_figures.py   # Publication figures 1, 2, 3, 4 (genuine PyTorch passes)
+├── generate_advanced_analyses.py     # Place cell atlas (Fig 5) & cross-task dynamics (Fig 7)
+├── verify_empirical_claims.py        # Standalone empirical claims audit suite
+├── verification_results.md           # Full empirical audit tables and verified numbers
+├── VERIFICATION.md                   # Verification methodology and reproduction guide
+├── OVERVIEW.md                       # High-level project summary and key findings
+├── track.md                          # Comprehensive phase-by-phase tracking log
 ├── models.py                         # PyTorch & snnTorch network architectures (A, B, C, D)
 ├── requirements.txt                  # Dependency specifications
-├── stage_zero_scan.py                # Perceptual aliasing baseline diagnostic
-├── test_init.py                      # System initialization & sanity checks
-├── track.md                          # Detailed project progress tracker & audit log
 └── train.py                          # Multi-task PPO RL training engine
 ```
 
@@ -267,4 +270,4 @@ python evaluate_decision_gate.py
 
 ## License
 
-This project is licensed under the MIT License, see the <LICENSE> file for details.
+This project is licensed under the MIT License, see the [LICENSE](LICENSE) file for details.
