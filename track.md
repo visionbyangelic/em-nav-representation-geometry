@@ -69,15 +69,16 @@
 
 ---
 
-### **Phase 6: Zero-Shot Continuous Transfer & Keyframe Animation Pipeline (COMPLETED ✅)**
-- [x] **Build Continuous Transfer Engine (`blender/continuous_eval.py`):**
-  - [x] Deploy frozen control weights zero-shot into continuous 3D coordinate space with continuous raycasting.
-  - [x] Compute Representational Drift Index (RDI = $1 - r(\text{RDM}_{\text{disc}}, \text{RDM}_{\text{cont}})$).
-- [x] **Continuous Transfer Results:**
-  - **Agent A (MLP)**: RDI = $1.0300 \pm 0.0153$
-  - **Agent B (FF-SNN)**: RDI = $1.0521 \pm 0.0143$
-  - **Agent C (RNN)**: RDI = $1.0347 \pm 0.0142$
-  - **Agent D (RSNN + Sparsity)**: **Peak Manifold Stability (RDI = $0.9622$ on Task 2 Seed 101)**.
+### **Phase 6: Zero-Shot Continuous Transfer & Multi-Trial Benchmark (COMPLETED ✅)**
+- [x] **Build Multi-Trial Continuous Transfer Engine (`blender/run_multitrial_benchmark.py`):**
+  - [x] Executed **60 total stochastic rollouts** (4 architectures $\times$ 3 training seeds $\times$ 5 independently seeded evaluation trials) in continuous 3D coordinate space.
+  - [x] Evaluated escape success rate, steps-to-exit variance among successes, spatial coverage, and net displacement.
+- [x] **Multi-Trial Continuous Benchmark Results ($N=15$ Trials per Architecture):**
+  - **Agent A (MLP)**: Escape Rate = **33.3% (5/15)**, Steps = $1,498 \pm 649$, Coverage = $141.3 \pm 61.1$ spots, Displacement = $3.92 \pm 2.39\text{m}$
+  - **Agent B (FF-SNN)**: Escape Rate = **40.0% (6/15)**, Steps = $1,462 \pm 711$, Coverage = $215.9 \pm 42.5$ spots, Displacement = $4.27 \pm 2.35\text{m}$
+  - **Agent C (RNN)**: Escape Rate = **33.3% (5/15)**, Steps = $1,318 \pm 746$, Coverage = $147.1 \pm 63.0$ spots, Displacement = $4.22 \pm 2.59\text{m}$
+  - **Agent D (RSNN)**: Escape Rate = **40.0% (6/15)**, Steps = **$1,470 \pm 380$**, Coverage = **$215.0 \pm 50.3$ spots**, Displacement = **$4.78 \pm 1.92\text{m}$**
+- [x] **Key Scientific Finding**: Spiking dynamics improve spatial coverage and escape rate; Agent D provides high trajectory consistency among successful runs, establishing a dissociation between internal representation tuning and raw zero-shot escape rate.
 - [x] **Bake Native Blender Keyframe Animations (`blender/bake_keyframes.py`):**
   - [x] Autonomous 3D trajectory calculation & native keyframe insertion into `em-nav Maze.blend`.
   - [x] User plays 3D navigation natively inside Blender GUI by pressing **`SPACEBAR`**.

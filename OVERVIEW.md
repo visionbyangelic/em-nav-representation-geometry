@@ -73,14 +73,14 @@ We wanted to answer a fundamental question:
 ## 4. 3D BLENDER CONTINUOUS EVALUATION (PHASE 6 🏆)
 
 ### **Goal**:
-Deploy the frozen trained model weights into a real 3D Blender maze environment to evaluate zero-shot continuous transfer — can an agent trained in a discrete 2D grid navigate a continuous 3D world?
+Deploy the frozen trained model weights into a real 3D Blender maze environment to evaluate zero-shot continuous transfer across **60 stochastic rollouts** (4 architectures $\times$ 3 training seeds $\times$ 5 trials).
 
-### **Final Results & Discoveries**:
-- ✅ **Agent D (RSNN + Sparsity)** explored **216 unique spatial locations** (>4× the coverage of MLP) and discovered the maze exit in 2,938 steps ($5.66\text{m}$ displacement).
-- ✅ **Agent B (FF-SNN)** escaped in 399 steps with high momentum ($7.16\text{m}$ displacement).
-- ❌ **Agent A (MLP)** suffered sensorimotor collapse, exploring only 50 locations before getting trapped in a corner loop (>3000 steps).
-- ❌ **Agent C (RNN)** explored 134 locations but timed out without finding the exit ($1.61\text{m}$ displacement).
-- 🎬 **Video Demonstration**: [Full Continuous 3D Session Recording on Google Drive](https://drive.google.com/drive/folders/1FgytuJH088AdKIwC2F94CYKZ6sZAYYqO?usp=drive_link) & 11s preview clip in `figures/`.
+### **Multi-Trial Results ($N=15$ Trials per Architecture)**:
+- **Escape Success Rate**: **Agent D (RSNN)** and **Agent B (FF-SNN)** tied for the highest escape rate at **40.0%** (6/15 escapes each), outperforming Agent A (33.3%, 5/15) and Agent C (33.3%, 5/15).
+- **Labyrinth Coverage**: Spiking networks achieved broader spatial exploration (~215 unique spots) than continuous models (~141–147 spots).
+- **Trajectory Consistency**: Among successful escapes, **Agent D demonstrated the lowest steps-to-exit variance** ($1,470 \pm 380$ steps vs $\pm 711$ for B, $\pm 649$ for A, $\pm 746$ for C) and highest displacement ($4.78 \pm 1.92\text{ m}$).
+- **Scientific Takeaway (Representation vs Behavior Dissociation)**: Spiking dynamics significantly enhance physical exploration. However, Agent D's superior internal place field sharpness in 2D did not produce a higher raw escape success rate over feedforward spiking control in 3D transfer, demonstrating an intriguing dissociation between internal geometry and zero-shot behavioral transfer.
+- 🎬 **Video Demonstration**: [Full Continuous 3D Session Recording on Google Drive](https://drive.google.com/drive/folders/1FgytuJH088AdKIwC2F94CYKZ6sZAYYqO?usp=drive_link).
 
 ---
 

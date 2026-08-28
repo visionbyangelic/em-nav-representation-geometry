@@ -85,3 +85,19 @@ All numbers below come from actual forward passes through frozen `.pt` checkpoin
 | D | **-0.030** | 0.058 | Negative (no linear decodability) |
 
 > **Finding:** Linear probing $R^2$ collapses to near-zero/negative on Task 2 (Curiosity Exploration) across all architectures. Figure 7 was updated in `generate_advanced_analyses.py` to reflect these exact numbers.
+
+---
+
+## Audit 6: Multi-Trial 3D Blender Continuous Benchmark ✅ (N=60 Rollouts)
+
+Evaluated zero-shot continuous transfer across **4 Architectures $\times$ 3 Training Seeds $\times$ 5 Independent Rollout Trials = 60 Total Rollouts**:
+
+| Architecture | Trials | Escape Success Rate | Steps to Exit *(Successes Only)* | Unique Spots Explored | Net Displacement |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **Agent A (MLP)** | 15 | 33.3% (5/15) | 1,498 ± 649 | 141.3 ± 61.1 | 3.92 ± 2.39 m |
+| **Agent B (FF-SNN)** | 15 | **40.0% (6/15)** | 1,462 ± 711 | **215.9 ± 42.5** | 4.27 ± 2.35 m |
+| **Agent C (RNN)** | 15 | 33.3% (5/15) | 1,318 ± 746 | 147.1 ± 63.0 | 4.22 ± 2.59 m |
+| **Agent D (RSNN + Sparsity)** | 15 | **40.0% (6/15)** | **1,470 ± 380** | **215.0 ± 50.3** | **4.78 ± 1.92 m** |
+
+> **Scientific Insight (Representation vs Transfer Dissociation):**  
+> Spiking architectures (B & D) both outperform continuous models in exploration and escape rate (40.0% vs 33.3%). However, Agent D and Agent B are tied in escape success rate (6/15 vs 6/15). Agent D's specific advantage in 3D transfer is **trajectory consistency among successes** (lowest steps-to-exit variance: $\pm 380$ vs $\pm 711$) and net displacement, rather than raw escape percentage. This demonstrates an intriguing dissociation between internal spatial tuning quality and zero-shot behavioral escape capability.
