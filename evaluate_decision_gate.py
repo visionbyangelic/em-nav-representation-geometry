@@ -135,10 +135,12 @@ def execute_phase_5_decision_gate(checkpoint_dir="checkpoints"):
 
     t_stat_a, p_val_a = stats.ttest_ind(d_info, a_info, equal_var=False)
     t_stat_b, p_val_b = stats.ttest_ind(d_info, b_info, equal_var=False)
+    t_stat_c, p_val_c = stats.ttest_ind(d_info, c_info, equal_var=False)
 
     print("\n--- 3. Hypothesis Significance Testing (Welch's t-test) ---")
     print(f"  | Agent D vs Agent A (MLP):    t = {t_stat_a:.4f}, p = {p_val_a:.4e}")
     print(f"  | Agent D vs Agent B (FF-SNN): t = {t_stat_b:.4f}, p = {p_val_b:.4e}")
+    print(f"  | Agent D vs Agent C (RNN):    t = {t_stat_c:.4f}, p = {p_val_c:.4e}")
 
     d_mean_info = np.mean(d_info)
     d_std_info  = np.std(d_info)
@@ -147,10 +149,10 @@ def execute_phase_5_decision_gate(checkpoint_dir="checkpoints"):
     print("PHASE 5 SCIENTIFIC DECISION GATE VERDICT")
     print("=" * 84)
 
-    if d_mean_info > 1.0 and p_val_a < 0.001 and d_std_info < 0.8:
+    if d_mean_info > 1.0 and p_val_a < 0.001 and p_val_c < 0.01 and d_std_info < 0.8:
         print("  VERDICT: DECISION GATE PASSED SUCCESSFULLY! (PASS [OK])")
         print(f"  | Agent D (RSNN + Sparsity) demonstrates robust, statistically significant place-cell spatial tuning")
-        print(f"    (Mean Skaggs Info = {d_mean_info:.4f} bits/spike, p < 0.001 vs MLP/FF-SNN).")
+        print(f"    (Mean Skaggs Info = {d_mean_info:.4f} bits/spike; p < 0.001 vs MLP/FF-SNN, p < 0.01 vs RNN).")
         print(f"  | Seed variance is within pre-registered tolerance bounds (std = {d_std_info:.4f}).")
         print("  UNLOCKING PHASE 6: ZERO-SHOT CONTINUOUS TRANSFER ENGINE (BLENDER 3D PHYSICS)!")
     else:

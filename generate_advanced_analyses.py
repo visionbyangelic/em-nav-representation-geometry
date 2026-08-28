@@ -111,13 +111,13 @@ def generate_task_comparison():
     x = np.arange(len(architectures))
     width = 0.35
 
-    # Exact Skaggs Information Means across seeds
+    # Exact Skaggs Information Means across seeds (Task 1 vs Task 2)
     skaggs_task1 = [0.024, 0.046, 0.434, 1.836]
-    skaggs_task2 = [0.038, 0.052, 0.840, 1.921]
+    skaggs_task2 = [0.045, 0.249, 0.840, 1.921]
 
-    # Exact Linear Probing R² Means across seeds
+    # Exact Linear Probing R² Means across seeds (Task 1 vs Task 2)
     r2_task1 = [0.021, 0.034, 0.043, 0.052]
-    r2_task2 = [0.028, 0.039, 0.049, 0.058]
+    r2_task2 = [-0.024, -0.031, -0.030, -0.030]
 
     # Panel 1: Skaggs Spatial Information
     ax1.bar(x - width/2, skaggs_task1, width, label="Task 1 (Invisible Goal)", color="#4A90E2", alpha=0.9, edgecolor="black")
@@ -136,6 +136,7 @@ def generate_task_comparison():
     ax2.set_title("(B) Linear Coordinate Decodability Across Tasks", fontsize=12, fontweight="bold")
     ax2.set_xticks(x)
     ax2.set_xticklabels(architectures, fontsize=10, fontweight="bold")
+    ax2.axhline(0, color="black", linestyle="--", linewidth=0.8, alpha=0.7)
     ax2.legend(frameon=True, facecolor="white", edgecolor="#cccccc", fontsize=9)
     ax2.grid(True, axis="y")
 

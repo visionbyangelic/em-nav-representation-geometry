@@ -16,7 +16,7 @@
 | 2 | Linear Probing & Tri-RSA Representation Diagnostics | ✅ Complete |
 | 3 | Skaggs Spatial Information Index & Place Cell Tuning | ✅ Complete |
 | 4 | Single-Unit Spatial Firing Rate Heatmaps | ✅ Complete |
-| 5 | Pre-Registration Decision Gate (Welch's $t$-test: $p=0.00067$) | ✅ Complete |
+| 5 | Pre-Registration Decision Gate (Welch's $t$-test: $p=4.97 \times 10^{-4}$ vs MLP, $p=1.76 \times 10^{-3}$ vs RNN) | ✅ Complete |
 | 6 | 3D Blender Zero-Shot Continuous Transfer & Multi-Agent Benchmark | ✅ Complete |
 | 7 | Scientific Publication Figures, Navigation Video & Manuscript | ✅ Complete |
 
@@ -34,7 +34,7 @@ We conducted a controlled computational neuroscience experiment to test how arti
   - **Agent A (MLP)**: Continuous deep learning baseline (no spiking, no memory).
   - **Agent B (FF-SNN)**: Spiking neural network (LIF neurons), but no memory.
   - **Agent C (RNN)**: Recurrent network with memory loops, but continuous (no spiking).
-  - **Agent D (RSNN + Sparsity)**: Recurrent Spiking Neural Network + **Biological 2-5% $L_1$ Population Sparsity Penalty** (combining spiking + memory + metabolic scarcity).
+  - **Agent D (RSNN + Sparsity)**: Recurrent Spiking Neural Network + **$L_1$ Population Activity Penalty** ($\lambda = 10^{-4}$, producing an emergent **$0.59\% \pm 0.05\%$** firing rate).
 
 ### **The Diagnostic Pipeline**:
 After training 1,000,000 steps, we froze all weights and evaluated all 24 models using:
@@ -47,7 +47,7 @@ After training 1,000,000 steps, we froze all weights and evaluated all 24 models
 ## 2. WHY DID WE DO IT?
 
 ### **The Core Neuroscience Question**:
-In biological brains (the hippocampal-entorhinal system), animals navigate complex worlds using **place cells** while operating under extreme metabolic scarcity—only **2% to 5% of neurons spike at any given moment**.
+In biological brains (the hippocampal-entorhinal system), animals navigate complex worlds using **place cells** while operating under extreme metabolic scarcity—only **a small fraction of neurons spike at any given moment**.
 
 We wanted to answer a fundamental question:
 > *Are biological constraints (event-driven spiking thresholds, recurrence loops, and metabolic activity scarcity) just physical limitations, or are they the ESSENTIAL inductive biases that FORCE a neural population to organize into abstract, place-like spatial maps?*
@@ -65,7 +65,7 @@ We wanted to answer a fundamental question:
 - **What it does for us**: Demonstrates that event-driven LIF spiking thresholds sharpen obstacle feature boundaries compared to smooth ReLUs.
 
 ### **Discovery 3: The Emergence of Place-Like Spatial Tuning ($H_1$ Confirmed — THE HEADLINE FINDING)**
-- **Result**: **Agent D (Recurrent SNN + Sparsity)** achieved the **highest Skaggs Spatial Information Index ($I = 1.09 - 2.82$ bits/spike)** across all 24 models—up to **100x higher spatial information per spike** than feedforward networks!
+- **Result**: **Agent D (Recurrent SNN + Sparsity)** achieved the **highest Skaggs Spatial Information Index ($I = 1.09 - 2.83$ bits/spike, mean $2.00 \pm 0.55$)** across all 24 models—up to **76× higher spatial information per spike** than feedforward networks!
 - **What it does for us**: **This is the core scientific contribution of your paper.** It proves that spatial place cell tuning does not emerge by chance in deep learning—it requires the **biological triad of event-driven spiking thresholds, temporal recurrence loops, AND metabolic population sparsity.**
 
 ---
@@ -80,7 +80,7 @@ Deploy the frozen trained model weights into a real 3D Blender maze environment 
 - ✅ **Agent B (FF-SNN)** escaped in 399 steps with high momentum ($7.16\text{m}$ displacement).
 - ❌ **Agent A (MLP)** suffered sensorimotor collapse, exploring only 50 locations before getting trapped in a corner loop (>3000 steps).
 - ❌ **Agent C (RNN)** explored 134 locations but timed out without finding the exit ($1.61\text{m}$ displacement).
-- 🎬 **Video Demonstration**: Full continuous session video recorded and archived in `figures/`.
+- 🎬 **Video Demonstration**: [Full Continuous 3D Session Recording on Google Drive](https://drive.google.com/drive/folders/1FgytuJH088AdKIwC2F94CYKZ6sZAYYqO?usp=drive_link) & 11s preview clip in `figures/`.
 
 ---
 
@@ -88,8 +88,8 @@ Deploy the frozen trained model weights into a real 3D Blender maze environment 
 
 All 6 publication figures generated directly from the 24 trained checkpoints ($N=24$ runs, 3 random seeds):
 - **Figure 1**: Tri-RSA Representational Geometry (RDM correlation with Geodesic, Euclidean, and Sensorimotor matrices)
-- **Figure 2**: Skaggs Spatial Information Index Distribution & $t$-test confirmation ($p = 0.00067$)
-- **Figure 3**: Emergent Place Cell Spatial Firing Rate Heatmaps ($12 \times 12$ grid)
+- **Figure 2**: Skaggs Spatial Information Index Distribution & $t$-test confirmation ($p = 4.97 \times 10^{-4}$ vs MLP, $p = 1.76 \times 10^{-3}$ vs RNN)
+- **Figure 3**: Emergent Place Cell Spatial Firing Rate Heatmaps (Real Checkpoint Activations)
 - **Figure 4**: Zero-Shot 3D Continuous Transfer Benchmark & Trajectories
 - **Figure 5**: Complete 32-Neuron Place Field Atlas for Agent D
 - **Figure 7**: Task 1 (Blind Search) vs. Task 2 (Curiosity Exploration) Dynamics

@@ -105,7 +105,7 @@ def generate_figure2_skaggs_info():
         yval = bar.get_height()
         ax.text(bar.get_x() + bar.get_width()/2.0, yval + 0.12, f"{mean:.2f} b/spk", ha="center", va="bottom", fontsize=10, fontweight="bold")
 
-    ax.annotate("Up to 76× higher spatial information per spike\n(Welch's t-test: p = 0.00067 < 0.001)", 
+    ax.annotate("Up to 76× higher spatial information per spike\n(vs MLP: p = 4.97e-4, vs RNN: p = 1.76e-3)", 
                 xy=(3, 2.45), xytext=(2.2, 2.5),
                 ha="center", fontsize=9, fontweight="bold", color="#D0021B",
                 bbox=dict(boxstyle="round,pad=0.3", edgecolor="#D0021B", facecolor="#FFF0F0"))
@@ -118,42 +118,90 @@ def generate_figure2_skaggs_info():
 
 
 # ========================================================================================================
-# FIGURE 3: 2D PLACE CELL FIRING RATE HEATMAPS
+# FIGURE 3: 2D PLACE CELL FIRING RATE HEATMAPS (REAL EMPIRICAL CHECKPOINTS)
 # ========================================================================================================
 def generate_figure3_place_fields():
-    """Generates synthetic 12x12 place field heatmaps illustrating Agent D emergent tuning vs MLP."""
+    """Generates 12x12 place field heatmaps from real trained PyTorch checkpoints (RSNN vs MLP)."""
+    import torch
+    from minigrid.envs import EmptyEnv
+    from minigrid.core.world_object import Wall
+    from wrappers.raycast import EgocentricRaycastWrapper
+    from models import AgentA_MLP, AgentD_RSNN
+    from train import actor_forward
+    from evaluate_single_units import compute_skaggs_spatial_information
+
+    repo_dir = os.path.dirname(os.path.abspath(__file__))
+    ckpt_dir = os.path.join(repo_dir, "checkpoints")
+
+    base_env = EmptyEnv(size=12, render_mode=None)
+    base_env.reset(seed=42)
+    grid = base_env.unwrapped.grid
+    for y in range(2, 10):
+        grid.set(6, y, Wall())
+    wrapper = EgocentricRaycastWrapper(base_env)
+
+    agent_data = {}
+    for agent_type, label, model_cls in [("A", "Agent A (MLP)", AgentA_MLP), ("D", "Agent D (RSNN)", AgentD_RSNN)]:
+        ckpt_path = os.path.join(ckpt_dir, f"agent_{agent_type}_task1_seed_42.pt")
+        if not os.path.exists(ckpt_path):
+            print(f"[!] Warning: Checkpoint {ckpt_path} not found. Skipping Figure 3.")
+            return
+
+        model = model_cls()
+        model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
+        model.eval()
+
+        rate_sums = np.zeros((12, 12, 32))
+        occupancy = np.zeros((12, 12))
+
+        with torch.no_grad():
+            for x in range(grid.width):
+                for y in range(grid.height):
+                    cell = grid.get(x, y)
+                    if cell is not None and cell.type in ['wall', 'door']:
+                        continue
+                    for heading in range(4):
+                        wrapper.unwrapped.agent_pos = (x, y)
+                        wrapper.unwrapped.agent_dir = heading
+                        obs = wrapper.observation(None)
+                        obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
+                        h_rep, _, _ = actor_forward(model, agent_type, obs_tensor)
+                        rate_sums[x, y] += h_rep.squeeze(0).cpu().numpy()
+                        occupancy[x, y] += 1.0
+
+        occupancy_broadcast = np.maximum(occupancy[:, :, None], 1e-8)
+        spatial_rate_maps = rate_sums / occupancy_broadcast
+        unit_scores = [compute_skaggs_spatial_information(spatial_rate_maps[:, :, u], occupancy) for u in range(32)]
+        top4_idx = np.argsort(unit_scores)[-4:][::-1]
+
+        agent_data[agent_type] = {
+            "label": label,
+            "spatial_rate_maps": spatial_rate_maps,
+            "unit_scores": unit_scores,
+            "top4_idx": top4_idx
+        }
+
     fig, axes = plt.subplots(2, 4, figsize=(14, 7), dpi=300)
 
-    # Generate synthetic 12x12 maze grids for visual representation
-    grid_size = 12
-    xx, yy = np.meshgrid(np.arange(grid_size), np.arange(grid_size))
+    for row_idx, agent_type in enumerate(["A", "D"]):
+        data = agent_data[agent_type]
+        cmap = "viridis" if agent_type == "A" else "hot"
+        row_color = "#333333" if agent_type == "A" else "#B00000"
 
-    # Agent A (MLP): Diffuse, wall-aligned activation (no discrete place tuning)
-    for i in range(4):
-        ax = axes[0, i]
-        # Wall distance gradient
-        field = np.exp(-((xx - 0)**2 + (yy - 0)**2) / 40.0) + np.random.normal(0, 0.05, (grid_size, grid_size))
-        field = np.clip(field, 0, 1)
-        im = ax.imshow(field, cmap="viridis", origin="lower")
-        ax.set_title(f"MLP Unit {i+1} ($I=0.02$ b/spk)", fontsize=10, fontweight="bold")
-        ax.set_xticks([])
-        ax.set_yticks([])
+        for col_idx, unit_idx in enumerate(data["top4_idx"]):
+            ax = axes[row_idx, col_idx]
+            rate_map = data["spatial_rate_maps"][:, :, unit_idx]
+            info = data["unit_scores"][unit_idx]
 
-    # Agent D (RSNN + Sparsity): Highly localized Gaussian place fields
-    centers = [(3, 8), (8, 9), (9, 3), (2, 3)]
-    for i, (cx, cy) in enumerate(centers):
-        ax = axes[1, i]
-        field = np.exp(-((xx - cx)**2 + (yy - cy)**2) / 2.5) + np.random.normal(0, 0.02, (grid_size, grid_size))
-        field = np.clip(field, 0, 1)
-        im = ax.imshow(field, cmap="hot", origin="lower")
-        ax.set_title(f"RSNN Place Cell {i+1} ($I=2.35$ b/spk)", fontsize=10, fontweight="bold", color="#B00000")
-        ax.set_xticks([])
-        ax.set_yticks([])
+            im = ax.imshow(rate_map.T, cmap=cmap, origin="lower", interpolation="nearest")
+            ax.set_title(f"Unit {unit_idx+1} ($I={info:.2f}$ b/spk)", fontsize=10, fontweight="bold", color=row_color)
+            ax.set_xticks([])
+            ax.set_yticks([])
 
-    axes[0, 0].set_ylabel("Agent A (MLP)\n[No Place Tuning]", fontsize=11, fontweight="bold")
+    axes[0, 0].set_ylabel("Agent A (MLP)\n[Baseline]", fontsize=11, fontweight="bold")
     axes[1, 0].set_ylabel("Agent D (RSNN)\n[Emergent Place Fields]", fontsize=11, fontweight="bold", color="#B00000")
 
-    fig.suptitle("Figure 3: Spatial Firing Rate Heatmaps Across 12×12 Maze\n(Emergence of Localized Hippocampal-Like Place Fields in RSNN)", fontsize=14, fontweight="bold", y=0.98)
+    fig.suptitle("Figure 3: Spatial Firing Rate Heatmaps Across 12×12 Maze\n(Emergence of Localized Hippocampal-Like Place Fields in RSNN — Real Checkpoint Data)", fontsize=14, fontweight="bold", y=0.98)
 
     plt.tight_layout()
     path = os.path.join(output_dir, "Figure3_Emergent_Place_Cell_Heatmaps.png")

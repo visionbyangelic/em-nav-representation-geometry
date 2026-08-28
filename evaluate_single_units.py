@@ -18,7 +18,7 @@ RESEARCH & SCIENTIFIC PURPOSE:
       - lambda_bar: Overall mean firing rate across all occupied spatial bins
 
 TEMPORAL SHUFFLE NULL CONTROL (SHUFFLE-VALIDATED PLACE UNITS):
-  - Executes a 1,000-iteration circular temporal time-shift shuffle control for each unit.
+  - Executes a 200-iteration circular temporal time-shift shuffle control for each unit.
   - Compares the unit's observed Skaggs Index against the 95th percentile (>P95) of its shuffle distribution.
   - Counts and reports the exact number of statistically significant place units (>P95 threshold) per model.
 
@@ -77,7 +77,7 @@ def compute_skaggs_spatial_information(spatial_rate_map, occupancy_map):
 
 
 # ========================================================================================================
-# 2. TIME-SHIFT SHUFFLE NULL CONTROL (1,000 CIRCULAR SHUFFLES)
+# 2. TIME-SHIFT SHUFFLE NULL CONTROL (200 CIRCULAR SHUFFLES)
 # ========================================================================================================
 def compute_time_shift_shuffle_null(rates, positions, occupancy_map, num_shuffles=200):
     """
