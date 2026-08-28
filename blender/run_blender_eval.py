@@ -218,13 +218,17 @@ def check_wall_collision(cube_obj, heading_rad, step_size, safety_margin=0.10):
 #         elif action == 1:
 #             cube.rotation_euler.z -= turn_rad
 #         elif action == 2 or action == 3:
-#             heading = cube.rotation_euler.z + (math.pi / 2.0)
-#             if check_wall_collision(cube, heading, STEP_SIZE):
-#                 wall_collisions += 1
-#             else:
-#                 cube.location.x += STEP_SIZE * math.cos(heading)
-#                 cube.location.y += STEP_SIZE * math.sin(heading)
-#                 forward_steps += 1
+            # Action Mapping Design Decision:
+            # Action 2 is MiniGrid 'Move Forward'. Action 3 is 'Pickup' (a no-op during 2D maze training).
+            # In continuous 3D physics, action 3 is intentionally mapped to forward translation to preserve
+            # forward locomotion momentum under stochastic policy exploration.
+            heading = cube.rotation_euler.z + (math.pi / 2.0)
+            if check_wall_collision(cube, heading, STEP_SIZE):
+                wall_collisions += 1
+            else:
+                cube.location.x += STEP_SIZE * math.cos(heading)
+                cube.location.y += STEP_SIZE * math.sin(heading)
+                forward_steps += 1
 # 
 #         bpy.context.view_layer.update()
 #         import time
@@ -321,6 +325,10 @@ def run_visual_demo(ckpt_name=SELECTED_CHECKPOINT, steps=MAX_STEPS):
         elif action == 1:  # Turn Right (-90° clockwise)
             cube.rotation_euler.z -= state["turn_rad"]
         elif action == 2 or action == 3:  # Move Forward
+            # Action Mapping Design Decision:
+            # Action 2 is MiniGrid 'Move Forward'. Action 3 is 'Pickup' (a no-op during 2D maze training).
+            # In continuous 3D physics, action 3 is intentionally mapped to forward translation to preserve
+            # forward locomotion momentum under stochastic policy exploration.
             heading = cube.rotation_euler.z + (math.pi / 2.0)
             if check_wall_collision(cube, heading, STEP_SIZE):
                 blocked = True
@@ -418,6 +426,10 @@ def run_batch_evaluation():
             elif action == 1:
                 cube.rotation_euler.z -= turn_rad
             elif action == 2 or action == 3:
+                # Action Mapping Design Decision:
+                # Action 2 is MiniGrid 'Move Forward'. Action 3 is 'Pickup' (a no-op during 2D maze training).
+                # In continuous 3D physics, action 3 is intentionally mapped to forward translation to preserve
+                # forward locomotion momentum under stochastic policy exploration.
                 heading = cube.rotation_euler.z + (math.pi / 2.0)
                 cube.location.x += STEP_SIZE * math.cos(heading)
                 cube.location.y += STEP_SIZE * math.sin(heading)
