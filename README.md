@@ -5,6 +5,12 @@
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
 [![Status: Final Verification In Progress](https://img.shields.io/badge/Status-Final_Verification_In_Progress-yellow.svg)]()
 
+> ### 💡 The Project in Plain English
+>
+> We tested whether forcing an AI to obey the same rules a real brain does—firing in short electrical pulses instead of constant numbers, using barely any of its neurons at once, and remembering where it's been—causes it to build a "mental map" of its surroundings on its own, the same way animals do, using only 32 tiny neurons and no GPS.
+>
+> **The Result:** It worked. The brain-like AI built sharp, localized "you are here" signals almost 80 times stronger than a normal AI network trained the exact same way. When we then dropped the frozen AI into a totally new, more realistic 3D maze it had never seen, it still knew how to move around competently—spiking networks in general handled the new maze noticeably better than non-spiking ones. Interestingly, the extra memory and sparsity didn't make it escape more often than a simpler spiking network; its real advantage showed up as steadier, more consistent paths to the exit rather than a higher success rate. So: the biological constraints do build a sharper internal map, but a sharper map didn't automatically mean better real-world performance—a small, honest twist that's part of the story.
+
 -----
 
 ## 1. What is This Project? (The Elevator Pitch)
@@ -262,8 +268,12 @@ python evaluate_decision_gate.py
 ├── OVERVIEW.md                       # High-level project summary and key findings
 ├── track.md                          # Comprehensive phase-by-phase tracking log
 ├── models.py                         # PyTorch & snnTorch network architectures (A, B, C, D)
+├── kaggle_train_all.py               # Standalone Kaggle GPU training launcher
+├── stage_zero_scan.py                # Perceptual aliasing baseline diagnostic
+├── test_init.py                      # System initialization & environment sanity checks
+├── train.py                          # Multi-task PPO RL training engine
 ├── requirements.txt                  # Dependency specifications
-└── train.py                          # Multi-task PPO RL training engine
+└── LICENSE                           # MIT open-source license
 ```
 
 -----
