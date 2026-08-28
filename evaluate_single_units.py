@@ -120,10 +120,21 @@ def compute_time_shift_shuffle_null(rates, positions, occupancy_map, num_shuffle
 # ========================================================================================================
 # 3. HARVEST SPATIAL RATE MAPS & TRAJECTORY SEQUENCES ACROSS MAZE
 # ========================================================================================================
-def harvest_spatial_unit_maps(model, agent_type, maze_size=12):
+def harvest_spatial_unit_maps(model, agent_type, maze_size=12, unroll_trajectory=False, n_unroll_steps=2000):
     """
     Computes 2D spatial rate heatmaps [12, 12, 32] for each of the 32 hidden units,
     and returns full sequential trajectory arrays (rates_sequence, pos_sequence) for shuffle controls.
+    
+    Args:
+        model (nn.Module): Frozen PyTorch model.
+        agent_type (str): 'A', 'B', 'C', or 'D'.
+        maze_size (int): Grid size (12).
+        unroll_trajectory (bool): If True, continuously unrolls steps carrying recurrent hidden state
+                                 (h_state) forward to preserve temporal history for Agents C & D.
+        n_unroll_steps (int): Number of steps to roll out if unroll_trajectory is True.
+        
+    Returns:
+        tuple: (spatial_rate_maps, occupancy, seq_rates, seq_positions)
     """
     base_env = EmptyEnv(size=maze_size, render_mode=None)
     base_env.reset(seed=42)
@@ -137,32 +148,57 @@ def harvest_spatial_unit_maps(model, agent_type, maze_size=12):
     rate_sums = np.zeros((maze_size, maze_size, 32))
     occupancy = np.zeros((maze_size, maze_size))
     
-    seq_rates = []   # List of 32-element arrays
+    seq_rates = []      # List of 32-element arrays
     seq_positions = []  # List of (x, y) tuples
 
-    h_state = None
     model.eval()
     with torch.no_grad():
-        for x in range(grid.width):
-            for y in range(grid.height):
-                cell = grid.get(x, y)
-                if cell is not None and cell.type in ['wall', 'door']:
-                    continue
-                for heading in range(4):
-                    base_env.unwrapped.agent_pos = (x, y)
-                    base_env.unwrapped.agent_dir = heading
+        if unroll_trajectory:
+            # Trajectory Unrolling Mode: Continuously steps through environment carrying h_state
+            obs, _ = wrapper.reset(seed=42)
+            h_state = None
+            for step in range(n_unroll_steps):
+                pos = tuple(base_env.unwrapped.agent_pos)
+                obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
 
-                    obs = wrapper.observation(None)
-                    obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
+                h_rep, logits, h_next = actor_forward(model, agent_type, obs_tensor, h_state)
+                h_state = h_next
+                rates_np = h_rep.squeeze(0).cpu().numpy()
 
-                    h_rep, _, _ = actor_forward(model, agent_type, obs_tensor, h_state)
-                    rates_np = h_rep.squeeze(0).cpu().numpy()
+                rate_sums[pos[0], pos[1], :] += rates_np
+                occupancy[pos[0], pos[1]] += 1.0
 
-                    rate_sums[x, y] += rates_np
-                    occupancy[x, y] += 1.0
-                    
-                    seq_rates.append(rates_np)
-                    seq_positions.append((x, y))
+                seq_rates.append(rates_np)
+                seq_positions.append(pos)
+
+                action = torch.argmax(logits, dim=-1).item()
+                obs, _, terminated, truncated, _ = wrapper.step(action)
+                if terminated or truncated:
+                    obs, _ = wrapper.reset(seed=42 + step)
+                    h_state = None
+        else:
+            # Grid Exhaustive Sweep Mode: Zero-history canonical evaluation across all valid positions & headings
+            h_state = None
+            for x in range(grid.width):
+                for y in range(grid.height):
+                    cell = grid.get(x, y)
+                    if cell is not None and cell.type in ['wall', 'door']:
+                        continue
+                    for heading in range(4):
+                        base_env.unwrapped.agent_pos = (x, y)
+                        base_env.unwrapped.agent_dir = heading
+
+                        obs = wrapper.observation(None)
+                        obs_tensor = torch.FloatTensor(obs).unsqueeze(0)
+
+                        h_rep, _, _ = actor_forward(model, agent_type, obs_tensor, h_state)
+                        rates_np = h_rep.squeeze(0).cpu().numpy()
+
+                        rate_sums[x, y, :] += rates_np
+                        occupancy[x, y] += 1.0
+                        
+                        seq_rates.append(rates_np)
+                        seq_positions.append((x, y))
 
     occupancy_broadcast = np.maximum(occupancy[:, :, None], 1e-8)
     spatial_rate_maps = rate_sums / occupancy_broadcast
@@ -172,7 +208,7 @@ def harvest_spatial_unit_maps(model, agent_type, maze_size=12):
 # ========================================================================================================
 # 4. PHASE 4 DIAGNOSTIC RUNNER WITH WIRED SHUFFLE SIGNIFICANCE TEST
 # ========================================================================================================
-def evaluate_phase_4_single_units(checkpoint_dir="checkpoints"):
+def evaluate_phase_4_single_units(checkpoint_dir="checkpoints", unroll_trajectory=False):
     """Runs Phase 4 Skaggs Spatial Information Index & P95 Shuffle Significance across all checkpoints."""
     checkpoint_files = sorted(glob.glob(os.path.join(checkpoint_dir, "*.pt")))
     if not checkpoint_files:
@@ -181,8 +217,9 @@ def evaluate_phase_4_single_units(checkpoint_dir="checkpoints"):
 
     agent_map = {"A": AgentA_MLP, "B": AgentB_FFSNN, "C": AgentC_RNN, "D": AgentD_RSNN}
 
+    mode_str = "TRAJECTORY UNROLLING" if unroll_trajectory else "CANONICAL GRID SWEEP"
     print("=" * 88)
-    print("🔬 EM-NAV: PHASE 4 SINGLE-UNIT SPATIAL TUNING ANALYSIS (SKAGGS INDEX & P95 SHUFFLE)")
+    print(f"EM-NAV: PHASE 4 SINGLE-UNIT SPATIAL TUNING ANALYSIS ({mode_str})")
     print("=" * 88)
     print(f"{'Checkpoint':<32} | {'Mean Info (bits)':<18} | {'Max Info (bits)':<18} | {'Significant Place Units (>P95)':<25}")
     print("-" * 88)
@@ -194,7 +231,9 @@ def evaluate_phase_4_single_units(checkpoint_dir="checkpoints"):
         model = agent_map[agent_type]()
         model.load_state_dict(torch.load(ckpt_path, map_location="cpu"))
 
-        spatial_rate_maps, occupancy, seq_rates, seq_positions = harvest_spatial_unit_maps(model, agent_type)
+        spatial_rate_maps, occupancy, seq_rates, seq_positions = harvest_spatial_unit_maps(
+            model, agent_type, unroll_trajectory=unroll_trajectory
+        )
 
         unit_info_scores = []
         significant_count = 0
@@ -220,4 +259,9 @@ def evaluate_phase_4_single_units(checkpoint_dir="checkpoints"):
 
 
 if __name__ == "__main__":
-    evaluate_phase_4_single_units()
+    import argparse
+    parser = argparse.ArgumentParser(description="Evaluate single unit spatial tuning (Skaggs index & shuffle control).")
+    parser.add_argument("--unroll", action="store_true", help="Unroll continuous exploration trajectories carrying recurrent hidden states.")
+    args = parser.parse_args()
+
+    evaluate_phase_4_single_units(unroll_trajectory=args.unroll)

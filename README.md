@@ -165,7 +165,7 @@ Frozen model weights, trained entirely in the discrete 2D maze, were evaluated z
 
 ## 11. Status & Audit Log
 
-### ✅ Completed Empirical Verifications & Benchmarks:
+### ✅ Completed Empirical Verifications & Methodological Safeguards:
 
 - [x] **Measure Agent D’s actual empirical mean population firing rate:** Verified at **$0.59\% \pm 0.05\%$** across all 6 checkpoints using [`verify_empirical_claims.py`](verify_empirical_claims.py).
 - [x] **Add an Agent D vs. Agent C significance test:** Integrated into [`evaluate_decision_gate.py`](evaluate_decision_gate.py) ($t=4.24, p=1.76 \times 10^{-3}$).
@@ -174,16 +174,27 @@ Frozen model weights, trained entirely in the discrete 2D maze, were evaluated z
 - [x] **Verify and update Task 2 empirical numbers:** Updated [`generate_advanced_analyses.py`](generate_advanced_analyses.py) with measured Skaggs and $R^2$ values.
 - [x] **Multi-trial 3D Blender continuous benchmark:** Executed across **60 stochastic rollouts** (4 architectures $\times$ 3 seeds $\times$ 5 trials) via [`blender/run_multitrial_benchmark.py`](blender/run_multitrial_benchmark.py).
 - [x] **Document the Blender continuous action-mapping:** Documented across all Blender evaluation scripts that action index 3 (pickup, a no-op during MiniGrid training) is mapped to forward locomotion in continuous 3D physics to maintain exploration momentum.
-
-### 📋 Open Items / Future Methodological Extensions:
-
-- [ ] **Add a held-out train/test split or $k$-fold cross-validation to linear coordinate probing** in `evaluate_representations.py` (which currently fits and evaluates ridge regression on the same collected spatial points).
-- [ ] **Align recurrent hidden-state unrolling in single-unit spatial evaluation:** `evaluate_representations.py` supports trajectory unrolling (`unroll_trajectory`); add an analogous trajectory-unrolling option to `evaluate_single_units.py` so Skaggs Information can optionally be scored with persistent temporal history in addition to zero-history state snapshots.
-- [ ] **Maintain continuous synchronization of project tracking documents:** Keep `Docs/EM-NAV Project Tracking Log & To-Do List.md` and `track.md` aligned with this running checklist.
+- [x] **5-Fold cross-validation on linear coordinate probing:** Implemented out-of-fold test scoring (`KFold(n_splits=5, shuffle=True, random_state=42)`) in [`evaluate_representations.py`](evaluate_representations.py).
+- [x] **Recurrent trajectory-unrolling support in single-unit evaluation:** Implemented `unroll_trajectory` and `--unroll` CLI support in [`evaluate_single_units.py`](evaluate_single_units.py) to support persistent hidden-state unrolling alongside canonical grid sweeps.
 
 -----
 
-## 12. Frequently Asked Questions
+## 12. Limitations & Empirical Boundaries
+
+To ensure complete scientific transparency, we explicitly document the four core empirical boundaries of the current findings:
+
+1. **Representation vs. Behavioral Transfer Dissociation ($N=15$ Trials per Architecture)**:
+   * While Agent D (RSNN + Sparsity) developed dramatically sharper internal spatial tuning in 2D ($I = 2.00 \pm 0.89$ b/spk vs $0.26 \pm 0.09$ b/spk for Agent B), this representational advantage did **not** produce a higher raw escape success rate over Agent B in 3D transfer (**both tied at 40.0%, 6/15 escapes**). Agent D’s specific physical edge is **trajectory consistency among successes** ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B, $\pm 649$ for A, $\pm 746$ for C) and net displacement ($4.78 \pm 1.92\text{ m}$), demonstrating that high single-unit spatial tuning does not automatically yield superior zero-shot behavioral escape capability over feedforward spiking control.
+2. **Non-Linear Population Geometry (Weak Linear Coordinate Probing $R^2 \le 0.052$)**:
+   * Despite high single-unit spatial information in Agent D, global $(x, y)$ coordinates cannot be decoded linearly from population firing rates ($R^2 = 0.052 \pm 0.011$ on Task 1, and negative $R^2 \approx -0.030$ on Task 2 across all models). Spatial information is encoded via non-linear, ultra-sparse population dynamics ($0.59\%$ firing rate) rather than an isometric, linearly readable Euclidean coordinate map.
+3. **Near-Zero Geodesic Tri-RSA ($\tau_{\text{geodesic}} \le 0.012$) Across All Architectures**:
+   * Neural representational distance matrices (RDMs) do not correlate with true shortest-path maze distances ($\tau_{\text{geodesic}} = 0.004 \pm 0.003$ for Agent D, and $0.004 - 0.012$ across all four agents). Pure visual reinforcement learning in egocentric space forms local sensory-attractor manifolds rather than a global metric geodesic cognitive map without explicit metric auxiliary losses.
+4. **Finite Training Sample Size ($N=3$ Training Seeds per Condition)**:
+   * All experiments evaluate 3 independent training seeds ($42, 101, 2023$) across 24 checkpoints. While 3 seeds guard against lucky training runs and support Welch’s $t$-tests ($p < 0.01$ for D vs C), scaling to $N \ge 10$ training seeds in future work would provide even tighter confidence intervals on population dynamics.
+
+-----
+
+## 13. Frequently Asked Questions
 
 **Q: Did you hand-code the place cells into the AI?**
 A: No. Each agent starts with randomly initialized weights. Any spatial tuning that emerges does so purely through reinforcement learning under the architectural constraints described above.

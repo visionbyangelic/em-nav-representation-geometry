@@ -85,6 +85,14 @@
 
 ---
 
+### **Limitations & Empirical Boundaries**
+1. **Representation-Transfer Dissociation**: Agent D and Agent B are tied at 40.0% escape rate ($N=15$). Agent D's advantage is trajectory consistency ($\pm 380$ vs $\pm 711$ steps variance) and displacement, establishing that 2D place field sharpness does not directly scale zero-shot physical escape rate over feedforward spiking control.
+2. **Non-Linear Geometry**: Linear probing $R^2 \le 0.052$ on Task 1 and negative on Task 2. Population spatial coding is non-linear and ultra-sparse ($0.59\%$ firing rate).
+3. **Near-Zero Geodesic Tri-RSA**: $\tau_{\text{geodesic}} \le 0.012$ across all models ($\tau = 0.004 \pm 0.003$ for Agent D).
+4. **Sample Size**: $N=3$ training seeds per condition across 24 checkpoints.
+
+---
+
 ## 3. Engineering Challenges & Troubleshooting Log (For Method Section of Paper)
 
 ### **Challenge 1: Ray Sensor Origin Calibration & Wall Proximity**

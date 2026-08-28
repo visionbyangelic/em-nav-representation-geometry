@@ -84,7 +84,7 @@ Deploy the frozen trained model weights into a real 3D Blender maze environment 
 
 ---
 
-## 5. PUBLICATION FIGURES & MANUSCRIPT (PHASE 7 🏆)
+## 5. PUBLICATION FIGURES (PHASE 7 🏆)
 
 All 6 publication figures generated directly from the 24 trained checkpoints ($N=24$ runs, 3 random seeds):
 - **Figure 1**: Tri-RSA Representational Geometry (RDM correlation with Geodesic, Euclidean, and Sensorimotor matrices)
@@ -96,6 +96,15 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 
 ---
 
+## 6. LIMITATIONS & EMPIRICAL BOUNDARIES
+
+1. **Representation vs. Behavioral Transfer Dissociation ($N=15$ Trials)**: Agent D developed dramatically sharper place fields in 2D ($I = 2.00$ b/spk vs $0.26$ b/spk for Agent B), but this did not produce a higher raw escape success rate over Agent B in 3D transfer (**tied at 40.0%, 6/15**). Agent D’s specific physical edge is trajectory consistency among successes ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B).
+2. **Non-Linear Population Geometry (Weak Linear Probing $R^2 \le 0.052$)**: Global $(x, y)$ coordinates cannot be decoded linearly from population firing rates ($R^2 = 0.052 \pm 0.011$ on Task 1, negative on Task 2). Spatial information is encoded via non-linear, ultra-sparse population dynamics ($0.59\%$ firing rate).
+3. **Near-Zero Geodesic Tri-RSA ($\tau_{\text{geodesic}} \le 0.012$)**: Neural representational distance matrices do not correlate with shortest-path maze distances ($\tau_{\text{geodesic}} = 0.004 \pm 0.003$ for Agent D). Egocentric visual policies form local sensory-attractor manifolds rather than a global metric geodesic cognitive map without auxiliary metric losses.
+4. **Finite Sample Size ($N=3$ Seeds per Condition)**: All findings are evaluated across 3 independent training seeds ($42, 101, 2023$) across 24 checkpoints.
+
+---
+
 ## 🛠️ Repository File Guide
 
 | File Name | Purpose in Plain English |
@@ -103,7 +112,7 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 | **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and current status (this file). |
 | **`README.md`** | Primary research repository documentation with visual figure gallery, benchmarks, and video links. |
 | **`track.md`** | Comprehensive scientific progress log, engineering troubleshooting log, and full 24-model empirical evaluation tables. |
-| **`Docs/RESEARCH_PAPER.md`** | Complete academic manuscript draft ready for scientific preprint / submission. |
+| **`verification_results.md`** | Complete numerical audit tables and empirical verification results across all 24 checkpoints. |
 | **`figures/`** | Publication figure assets (Figures 1, 2, 3, 4, 5, 7) and 3D continuous navigation video. |
 | **`generate_publication_figures.py`** | Publication figure generator for Figures 1, 2, 3, 4. |
 | **`generate_advanced_analyses.py`** | Empirical generator for Figure 5 (32-Neuron Atlas) and Figure 7 (Cross-Task). |
