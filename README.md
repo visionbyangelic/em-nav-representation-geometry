@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
-[![Status: Final Verification In Progress](https://img.shields.io/badge/Status-Final_Verification_In_Progress-yellow.svg)]()
+[![Status: Completed](https://img.shields.io/badge/Status-Final_Verification_In_Progress-yellow.svg)]()
 
 > ### 💡 The Project in Plain English
 >
