@@ -135,13 +135,13 @@ After 1,000,000 training steps per model, weights are frozen and evaluated with 
 
 ## 10. Zero-Shot 3D Continuous Transfer (Blender)
 
-### 3D Sensorimotor Navigation Demo (Preview)
+### 3D Continuous Labyrinth Evaluation (Blender)
 
 <p align="center">
-  <img src="figures/em_nav_3d_navigation_demo.webp" width="85%" alt="EM-NAV Zero-Shot 3D Continuous Navigation Demo" />
+  <img src="figures/em_nav_3d_labyrinth_environment.png" width="85%" alt="EM-NAV Zero-Shot 3D Continuous Labyrinth Environment" />
 </p>
 
-> 🔗 **Looking for the full continuous session?**  
+> 🔗 **Continuous Physics Session Video:**  
 > 📥 **[Watch / Download Full Uncut 3D Navigation Video on Google Drive](https://drive.google.com/drive/folders/1FgytuJH088AdKIwC2F94CYKZ6sZAYYqO?usp=drive_link)** *(Full high-definition continuous physics session and trajectory recordings)*
 
 |Architecture                 |3D Status|Steps to Exit|Unique Spots Explored|Wall Collisions|Net Displacement|
