@@ -127,10 +127,11 @@ After 1,000,000 training steps per model, weights are frozen and evaluated with 
 **Read honestly, not just favorably:**
 
 - Agent D’s single-unit spatial tuning (Skaggs Information) is dramatically higher than every other architecture, up to roughly **76× the mean of Agent A** (plain baseline).
-- **Statistical significance across architectures (Welch's t-test, two-tailed):**
+- **Statistical significance across architectures (Welch's t-test, two-tailed across all 24 checkpoints, 6 per architecture):**
   - **Agent D vs. Agent A (MLP):** $t = 7.85$, $p = 4.97 \times 10^{-4}$ ($p < 0.001$)
   - **Agent D vs. Agent B (FF-SNN):** $t = 6.89$, $p = 6.72 \times 10^{-4}$ ($p < 0.001$)
   - **Agent D vs. Agent C (RNN):** $t = 4.24$, $p = 1.76 \times 10^{-3}$ ($p < 0.01$)
+  - *Sample Grouping Note:* The table above reports Task 1 alone ($N=3$ seeds per agent), where Agent D reaches $I = 1.836 \pm 0.612\text{ bits/spike}$. The statistical significance tests above evaluate the full 24-checkpoint grand mean across both Task 1 and Task 2 ($N=6$ per agent), where Agent D reaches $I = 2.004 \pm 0.552\text{ bits/spike}$ vs $0.260 \pm 0.122\text{ bits/spike}$ for Agent B.
   - Isolating the contribution of spiking + sparsity over recurrence alone (D vs. C) is statistically significant at $p < 0.01$, confirming the combined inductive bias.
 - Agent D’s linear coordinate decodability ($R^2 \approx 0.05$ on Task 1, negative on Task 2) is weak in absolute terms. Strong single-unit place tuning does not, by itself, mean a global $(x,y)$ coordinate is cleanly readable out of the population with a simple linear decoder.
 - Geodesic alignment ($\tau_{\text{geodesic}}$) stays close to zero for all four architectures, including D. None of the models strongly locked onto true navigable-path topology by this measure.

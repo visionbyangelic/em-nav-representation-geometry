@@ -24,7 +24,7 @@
 | 4 | Single-Unit Spatial Firing Rate Heatmaps | ✅ Complete |
 | 5 | Pre-Registration Decision Gate (Welch's $t$-test: $p=4.97 \times 10^{-4}$ vs MLP, $p=1.76 \times 10^{-3}$ vs RNN) | ✅ Complete |
 | 6 | 3D Blender Zero-Shot Continuous Transfer & Multi-Agent Benchmark | ✅ Complete |
-| 7 | Scientific Publication Figures, Navigation Video & Manuscript | ✅ Complete |
+| 7 | Scientific Publication Figures, Navigation Video & Documentation | ✅ Complete |
 
 ---
 
