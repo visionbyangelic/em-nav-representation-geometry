@@ -164,7 +164,7 @@ Frozen model weights, trained entirely in the discrete 2D maze, were evaluated z
 **Scientific takeaways from the multi-trial benchmark:**
 
 1. **Spiking Dynamics Drive Continuous Exploration**: Both spiking architectures (Agent B and Agent D) explored significantly more continuous 3D territory (~215 unique locations) and achieved a higher escape rate (**40.0%**, 6/15) than non-spiking baselines A and C (~141–147 spots, 33.3% escape rate).
-2. **The Representation vs. Behavioral Transfer Dissociation**: While Agent D formed dramatically sharper internal spatial representations during 2D training (Skaggs Information $I = 2.00$ b/spk vs $0.26$ b/spk for Agent B), this representational advantage did **not** produce a higher raw escape success rate over Agent B in 3D transfer (both tied at exactly 6/15 escapes). High single-unit spatial tuning does not automatically yield superior zero-shot behavioral escape capability over feedforward spiking control.
+2. **The Representation vs. Behavioral Transfer Dissociation**: While Agent D formed dramatically sharper internal spatial representations during 2D training (Skaggs Information $I = 1.836 \pm 0.612$ b/spk vs $0.046 \pm 0.014$ b/spk for Agent B on Task 1), this representational advantage did **not** produce a higher raw escape success rate over Agent B in 3D transfer (both tied at exactly 6/15 escapes). High single-unit spatial tuning does not automatically yield superior zero-shot behavioral escape capability over feedforward spiking control.
 3. **Agent D’s Distinguishing Edge is Trajectory Consistency**: Among successful escapes, Agent D demonstrated markedly lower variance in steps-to-exit ($\pm 380$ steps vs $\pm 711$ for B, $\pm 649$ for A, $\pm 746$ for C) and the highest average net displacement ($4.78 \pm 1.92\text{ m}$), indicating more consistent trajectory execution when reaching the goal.
 
 -----
@@ -190,7 +190,7 @@ Frozen model weights, trained entirely in the discrete 2D maze, were evaluated z
 To ensure complete scientific transparency, we explicitly document the four core empirical boundaries of the current findings:
 
 1. **Representation vs. Behavioral Transfer Dissociation ($N=15$ Trials per Architecture)**:
-   * While Agent D (RSNN + Sparsity) developed dramatically sharper internal spatial tuning in 2D ($I = 2.00 \pm 0.89$ b/spk vs $0.26 \pm 0.09$ b/spk for Agent B), this representational advantage did **not** produce a higher raw escape success rate over Agent B in 3D transfer (**both tied at 40.0%, 6/15 escapes**). Agent D’s specific physical edge is **trajectory consistency among successes** ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B, $\pm 649$ for A, $\pm 746$ for C) and net displacement ($4.78 \pm 1.92\text{ m}$), demonstrating that high single-unit spatial tuning does not automatically yield superior zero-shot behavioral escape capability over feedforward spiking control.
+   * While Agent D (RSNN + Sparsity) developed dramatically sharper internal spatial tuning in 2D ($I = 1.836 \pm 0.612$ b/spk vs $0.046 \pm 0.014$ b/spk for Agent B on Task 1), this representational advantage did **not** produce a higher raw escape success rate over Agent B in 3D transfer (**both tied at 40.0%, 6/15 escapes**). Agent D’s specific physical edge is **trajectory consistency among successes** ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B, $\pm 649$ for A, $\pm 746$ for C) and net displacement ($4.78 \pm 1.92\text{ m}$), demonstrating that high single-unit spatial tuning does not automatically yield superior zero-shot behavioral escape capability over feedforward spiking control.
 2. **Non-Linear Population Geometry (Weak Linear Coordinate Probing $R^2 \le 0.052$)**:
    * Despite high single-unit spatial information in Agent D, global $(x, y)$ coordinates cannot be decoded linearly from population firing rates ($R^2 = 0.052 \pm 0.011$ on Task 1, and negative $R^2 \approx -0.030$ on Task 2 across all models). Spatial information is encoded via non-linear, ultra-sparse population dynamics ($0.59\%$ firing rate) rather than an isometric, linearly readable Euclidean coordinate map.
 3. **Near-Zero Geodesic Tri-RSA ($\tau_{\text{geodesic}} \le 0.012$) Across All Architectures**:
@@ -262,7 +262,8 @@ python evaluate_decision_gate.py
 ## Repository File Map
 
 ```text
-├── Docs/                             # Research proposal and project logs
+├── Docs/                             # Research proposal, Medium article, and project logs
+│   ├── MEDIUM_ARTICLE.md             # Complete publication-ready Medium article draft
 │   ├── EM-NAV_Research_Proposal.md   # Initial pre-registration proposal
 │   └── EM-NAV Project Tracking Log & To-Do List.md
 ├── blender/                          # Continuous 3D sensorimotor evaluation suite

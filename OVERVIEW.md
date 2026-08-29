@@ -104,7 +104,7 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 
 ## 6. LIMITATIONS & EMPIRICAL BOUNDARIES
 
-1. **Representation vs. Behavioral Transfer Dissociation ($N=15$ Trials)**: Agent D developed dramatically sharper place fields in 2D ($I = 2.00$ b/spk vs $0.26$ b/spk for Agent B), but this did not produce a higher raw escape success rate over Agent B in 3D transfer (**tied at 40.0%, 6/15**). Agent D’s specific physical edge is trajectory consistency among successes ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B).
+1. **Representation vs. Behavioral Transfer Dissociation ($N=15$ Trials)**: Agent D developed dramatically sharper place fields in 2D ($I = 1.836 \pm 0.612$ b/spk vs $0.046 \pm 0.014$ b/spk for Agent B on Task 1), but this did not produce a higher raw escape success rate over Agent B in 3D transfer (**tied at 40.0%, 6/15**). Agent D’s specific physical edge is trajectory consistency among successes ($\pm 380$ steps-to-exit variance vs $\pm 711$ for B).
 2. **Non-Linear Population Geometry (Weak Linear Probing $R^2 \le 0.052$)**: Global $(x, y)$ coordinates cannot be decoded linearly from population firing rates ($R^2 = 0.052 \pm 0.011$ on Task 1, negative on Task 2). Spatial information is encoded via non-linear, ultra-sparse population dynamics ($0.59\%$ firing rate).
 3. **Near-Zero Geodesic Tri-RSA ($\tau_{\text{geodesic}} \le 0.012$)**: Neural representational distance matrices do not correlate with shortest-path maze distances ($\tau_{\text{geodesic}} = 0.004 \pm 0.003$ for Agent D). Egocentric visual policies form local sensory-attractor manifolds rather than a global metric geodesic cognitive map without auxiliary metric losses.
 4. **Finite Sample Size ($N=3$ Seeds per Condition)**: All findings are evaluated across 3 independent training seeds ($42, 101, 2023$) across 24 checkpoints.
@@ -132,6 +132,7 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 | :--- | :--- |
 | **`OVERVIEW.md`** | Executive project summary: What we did, why we did it, major discoveries, and current status (this file). |
 | **`README.md`** | Primary research repository documentation with visual figure gallery, benchmarks, and video links. |
+| **`Docs/MEDIUM_ARTICLE.md`** | Complete publication-ready Medium article draft with embedded figure references. |
 | **`track.md`** | Comprehensive scientific progress log, engineering troubleshooting log, and full 24-model empirical evaluation tables. |
 | **`verification_results.md`** | Complete numerical audit tables and empirical verification results across all 24 checkpoints. |
 | **`figures/`** | Publication figure assets (Figures 1, 2, 3, 4, 5, 7) and 3D continuous navigation video. |
@@ -144,8 +145,9 @@ All 6 publication figures generated directly from the 24 trained checkpoints ($N
 | **`evaluate_single_units.py`** | Diagnostic tool for Skaggs Spatial Information Index ($I$) and 2D spatial firing rate heatmaps. |
 | **`evaluate_decision_gate.py`** | Phase 5 pre-registration decision gate with Welch's $t$-test statistical verification. |
 | **`stage_zero_scan.py`** | Pre-registration environment scan quantifying baseline perceptual aliasing density (81.52%). |
-| **`blender/run_blender_eval.py`** | 3D Blender live evaluation script — drives the agent through the maze using native raycasting. |
+| **`blender/run_blender_eval.py`** | 3D Blender live evaluation script that drives the agent through the maze using native raycasting. |
 | **`blender/run_comparative_eval.py`** | Headless comparative 4-agent benchmarking suite in 3D. |
+| **`blender/run_multitrial_benchmark.py`** | 60-rollout multi-trial continuous evaluation suite across all 3 training seeds. |
 | **`blender/em-nav Maze.blend`** | The 3D Blender maze scene file with agent cube and maze geometry. |
 | **`checkpoints/`** | Directory containing all 24 trained model weight files (`.pt`). |
 
