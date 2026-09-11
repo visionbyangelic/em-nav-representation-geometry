@@ -153,7 +153,7 @@ After 1,000,000 training steps per model, weights are frozen and evaluated with 
 </p>
 
 > 🔗 **Continuous Physics Session Video:**  
-> 📥 **[Watch / Download Full Uncut 3D Navigation Video on Google Drive](https://drive.google.com/drive/folders/1FgytuJH088AdKIwC2F94CYKZ6sZAYYqO?usp=drive_link)** *(Full high-definition continuous physics session and trajectory recordings)*
+> 📥 **[Watch / Download Full Uncut 3D Navigation Video on Youtube](https://youtu.be/uxkBqr7Y4zE)** *(Full high-definition continuous physics session and trajectory recordings)*
 
 #### Multi-Trial Continuous Transfer Benchmark ($N=15$ per Architecture Across All 3 Training Seeds)
 
