@@ -5,6 +5,10 @@
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
 [![Status: Completed](https://img.shields.io/badge/Status-Completed_V1-yellow.svg)]()
 
+
+> 📄 **Preprint Available:** Read the paper on [Zenodo (DOI: 10.5281/zenodo.22664091)](https://doi.org/10.5281/zenodo.22664091).
+
+
 > ### 💡 The Project in Plain English
 >
 > We tested whether forcing an AI to obey the same rules a real brain does (firing in short electrical pulses instead of constant numbers, using barely any of its neurons at once, and remembering where it's been) causes it to build a "mental map" of its surroundings on its own, the same way animals do, using only 32 tiny neurons and no GPS.
