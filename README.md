@@ -1,11 +1,17 @@
 # EM-NAV: Investigating the Role of Sparsity, Spiking Dynamics, and Recurrence in the Geometry and Transferability of Spatial Representations
 
+<div align="center">
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Framework: snnTorch](https://img.shields.io/badge/framework-snnTorch-orange.svg)](https://snntorch.readthedocs.io/)
 [![Status: Completed](https://img.shields.io/badge/Status-Completed_V1-yellow.svg)]()
 
+<br>
 
+[![Watch Demo](https://img.shields.io/badge/Watch_4min_Demo-on_YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/uxkBqr7Y4zE)
+
+</div>
 
 > ### 💡 The Project in Plain English
 >
